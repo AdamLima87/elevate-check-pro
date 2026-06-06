@@ -1,16 +1,18 @@
-import { Leaf } from "lucide-react";
+import logoAsset from "@/assets/elevare-logo.png.asset.json";
 
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <div className="flex items-center gap-2">
-      <div className="flex h-9 w-9 items-center justify-center rounded-full bg-primary text-primary-foreground">
-        <Leaf className="h-5 w-5" />
-      </div>
+      <img
+        src={logoAsset.url}
+        alt="Elevare Consultoria"
+        className="h-10 w-10 object-contain"
+      />
       {!compact && (
         <div className="leading-tight">
           <div className="text-sm font-semibold text-primary">Elevare</div>
           <div className="text-[10px] uppercase tracking-wider text-muted-foreground">
-            Consultoria em Segurança dos Alimentos
+            Segurança dos Alimentos
           </div>
         </div>
       )}
