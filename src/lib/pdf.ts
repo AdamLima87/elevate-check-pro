@@ -10,7 +10,7 @@ export function gerarPDF(insp: Inspecao) {
   const pageWidth = doc.internal.pageSize.getWidth();
 
   // Header
-  doc.setFillColor(26, 77, 46);
+  doc.setFillColor(26, 58, 92);
   doc.rect(0, 0, pageWidth, 70, "F");
   doc.setTextColor(255, 255, 255);
   doc.setFont("helvetica", "bold");
@@ -75,7 +75,7 @@ export function gerarPDF(insp: Inspecao) {
     startY: y,
     head: [["Seção", "S", "N", "NA", "%"]],
     body: sectionRows,
-    headStyles: { fillColor: [26, 77, 46], textColor: 255 },
+    headStyles: { fillColor: [26, 58, 92], textColor: 255 },
     styles: { fontSize: 9 },
     margin: { left: 40, right: 40 },
   });
