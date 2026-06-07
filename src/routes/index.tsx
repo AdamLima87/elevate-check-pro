@@ -39,8 +39,22 @@ function IndexPage() {
     }
   }, []);
 
+  const formatCNPJ = (value: string) => {
+    const digits = value.replace(/\D/g, "").slice(0, 14);
+    let formatted = digits;
+    if (digits.length > 2) formatted = `${digits.slice(0, 2)}.${digits.slice(2)}`;
+    if (digits.length > 5) formatted = `${formatted.slice(0, 6)}.${digits.slice(5)}`;
+    if (digits.length > 8) formatted = `${formatted.slice(0, 10)}/${digits.slice(8)}`;
+    if (digits.length > 12) formatted = `${formatted.slice(0, 15)}-${digits.slice(12)}`;
+    return formatted;
+  };
+
   const update = (k: keyof Estabelecimento, v: string) => {
-    setEstab((s) => ({ ...s, [k]: v }));
+    let finalValue = v;
+    if (k === "cnpj") {
+      finalValue = formatCNPJ(v);
+    }
+    setEstab((s) => ({ ...s, [k]: finalValue }));
   };
 
   const iniciar = () => {
