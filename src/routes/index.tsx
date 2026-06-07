@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState } from "react";
 import { AppShell } from "@/components/elevare/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,6 +14,7 @@ import {
   saveRascunho,
   saveToHistorico,
   type Estabelecimento,
+  type Inspecao,
 } from "@/lib/storage";
 import { ArrowRight, ClipboardCheck, Loader2 } from "lucide-react";
 
@@ -30,14 +31,14 @@ export const Route = createFileRoute("/")({
 function IndexPage() {
   const navigate = useNavigate();
   const [estab, setEstab] = useState<Estabelecimento>(emptyEstabelecimento());
-  const [hasRascunho, setHasRascunho] = useState(false);
+  const [rascunho, setRascunho] = useState<Inspecao | null>(null);
   const [loadingCnpj, setLoadingCnpj] = useState(false);
 
   useEffect(() => {
     const r = loadRascunho();
     if (r) {
-      setEstab(r.estabelecimento);
-      setHasRascunho(!r.finalizada);
+      setEstab(r.dados.estabelecimento);
+      setRascunho(r);
     }
   }, []);
 
@@ -70,7 +71,7 @@ function IndexPage() {
       
       const data = await res.json();
       
-      const endereco = [
+      const enderecoStr = [
         data.logradouro,
         data.numero,
         data.complemento
@@ -81,7 +82,7 @@ function IndexPage() {
         razaoSocial: data.razao_social || s.razaoSocial,
         nomeFantasia: data.nome_fantasia || data.razao_social || s.nomeFantasia,
         atividade: data.cnae_fiscal_descricao || s.atividade,
-        endereco: endereco || s.endereco,
+        endereco: enderecoStr || s.endereco,
         bairro: data.bairro || s.bairro,
         cep: data.cep || "",
         municipio: data.municipio || "",
@@ -103,8 +104,15 @@ function IndexPage() {
       toast.error("Preencha os campos obrigatórios antes de iniciar.");
       return;
     }
-    const existing = loadRascunho();
-    const insp = existing && !existing.finalizada ? { ...existing, estabelecimento: estab } : { ...newInspecao(), estabelecimento: estab };
+    
+    let insp: Inspecao;
+    if (rascunho && rascunho.status === "em_andamento") {
+      insp = { ...rascunho, dados: { ...rascunho.dados, estabelecimento: estab } };
+    } else {
+      insp = newInspecao();
+      insp.dados.estabelecimento = estab;
+    }
+    
     saveRascunho(insp);
     saveToHistorico(insp);
     navigate({ to: "/checklist" });
@@ -126,7 +134,7 @@ function IndexPage() {
         </p>
       </div>
 
-      {hasRascunho && (
+      {rascunho && rascunho.status === "em_andamento" && (
         <Card className="mb-4 border-secondary/40 bg-accent/50">
           <CardContent className="flex items-center justify-between p-4 text-sm">
             <span>Há uma inspeção em andamento. Os dados foram restaurados.</span>
