@@ -48,14 +48,13 @@ export interface QuestionarioEstab {
 }
 
 export interface Inspecao {
-  id: string; // Isso agora será o número sequencial convertido para string ou UUID?
-  // O usuário pediu id como número sequencial. Vamos manter id como string mas salvando o número.
+  id: string; 
   numero: number; 
   status: "em_andamento" | "concluida";
-  estabelecimento: string; // Nome fantasia ou razão social
+  estabelecimento: string; 
   dataInicio: string;
   dataConclusao: string | null;
-  progresso: number; // 0 a 100
+  progresso: number; 
   conformidade: number | null;
   dados: {
     estabelecimento: Estabelecimento;
@@ -67,9 +66,9 @@ export interface Inspecao {
 }
 
 const HISTORICO_KEY = "elevare_inspecoes";
-const RASCUNHO_KEY = "elevare:rascunho"; // Manter para compatibilidade interna de navegação se necessário, mas o histórico é o mestre
+const RASCUNHO_KEY = "elevare_rascunho"; 
 const NUMEROS_DISPONIVEIS_KEY = "elevare_numeros_disponiveis";
-const PROXIMO_NUMERO_KEY = "elevare:proximo_numero";
+const PROXIMO_NUMERO_KEY = "elevare_proximo_numero";
 
 export function emptyEstabelecimento(): Estabelecimento {
   return {
@@ -122,22 +121,28 @@ export function emptyFuncionario(): Funcionario {
 }
 
 function getNextNumero(): number {
-  if (typeof window === "undefined") return 1;
-  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  if (typeof localStorage === "undefined") return 1;
+  const raw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
+  const disponiveis = JSON.parse(raw || "[]") as number[];
+  
   if (disponiveis.length > 0) {
     const menor = Math.min(...disponiveis);
     const novosDisponiveis = disponiveis.filter((n) => n !== menor);
     localStorage.setItem(NUMEROS_DISPONIVEIS_KEY, JSON.stringify(novosDisponiveis));
     return menor;
   }
-  const proximo = parseInt(localStorage.getItem(PROXIMO_NUMERO_KEY) || "1", 10);
+  
+  const rawProx = localStorage.getItem(PROXIMO_NUMERO_KEY);
+  const proximo = parseInt(rawProx || "1", 10);
   localStorage.setItem(PROXIMO_NUMERO_KEY, (proximo + 1).toString());
   return proximo;
 }
 
 export function releaseNumero(numero: number) {
-  if (typeof window === "undefined") return;
-  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  if (typeof localStorage === "undefined") return;
+  const raw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
+  const disponiveis = JSON.parse(raw || "[]") as number[];
+  
   if (!disponiveis.includes(numero)) {
     disponiveis.push(numero);
     disponiveis.sort((a, b) => a - b);
@@ -146,13 +151,13 @@ export function releaseNumero(numero: number) {
 }
 
 export function formatNumero(n: number) {
-  return `#${n.toString().padStart(3, "0")}`;
+  return `#${(n || 0).toString().padStart(3, "0")}`;
 }
 
 export function newInspecao(): Inspecao {
   const num = getNextNumero();
   return {
-    id: num.toString(),
+    id: num.toString() + "_" + Date.now(),
     numero: num,
     status: "em_andamento",
     estabelecimento: "",
@@ -171,7 +176,7 @@ export function newInspecao(): Inspecao {
 }
 
 export function loadRascunho(): Inspecao | null {
-  if (typeof window === "undefined") return null;
+  if (typeof localStorage === "undefined") return null;
   try {
     const raw = localStorage.getItem(RASCUNHO_KEY);
     return raw ? (JSON.parse(raw) as Inspecao) : null;
@@ -181,31 +186,44 @@ export function loadRascunho(): Inspecao | null {
 }
 
 export function saveRascunho(insp: Inspecao) {
-  if (typeof window === "undefined") return;
+  if (typeof localStorage === "undefined") return;
   localStorage.setItem(RASCUNHO_KEY, JSON.stringify(insp));
 }
 
 export function clearRascunho() {
-  if (typeof window === "undefined") return;
+  if (typeof localStorage === "undefined") return;
   localStorage.removeItem(RASCUNHO_KEY);
 }
 
 export function loadHistorico(): Inspecao[] {
-  if (typeof window === "undefined") return [];
+  if (typeof localStorage === "undefined") return [];
   try {
     const raw = localStorage.getItem(HISTORICO_KEY);
-    return raw ? (JSON.parse(raw) as Inspecao[]) : [];
+    const list = raw ? (JSON.parse(raw) as Inspecao[]) : [];
+    // Ensure data integrity on load
+    return list.map(item => ({
+        ...item,
+        dados: item.dados || {
+            estabelecimento: emptyEstabelecimento(),
+            questionario: emptyQuestionario(),
+            funcionarios: [],
+            fotos: {}
+        },
+        respostas: item.respostas || {}
+    }));
   } catch {
     return [];
   }
 }
 
 export function saveToHistorico(insp: Inspecao) {
+  if (typeof localStorage === "undefined") return;
   const list = loadHistorico();
   const idx = list.findIndex((i) => i.id === insp.id);
   
-  // Atualizar campos de resumo baseados nos dados internos
-  insp.estabelecimento = insp.dados.estabelecimento.nomeFantasia || insp.dados.estabelecimento.razaoSocial;
+  if (insp.dados?.estabelecimento) {
+    insp.estabelecimento = insp.dados.estabelecimento.nomeFantasia || insp.dados.estabelecimento.razaoSocial || "";
+  }
   
   if (idx >= 0) list[idx] = insp;
   else list.unshift(insp);
@@ -214,6 +232,7 @@ export function saveToHistorico(insp: Inspecao) {
 }
 
 export function deleteFromHistorico(id: string) {
+  if (typeof localStorage === "undefined") return;
   const list = loadHistorico();
   const item = list.find((i) => i.id === id);
   if (item) {
@@ -235,11 +254,13 @@ export function calcularPercentual(respostas: Record<string, Resposta>): {
   percentual: number;
 } {
   let sim = 0, nao = 0, na = 0;
-  Object.values(respostas).forEach((r) => {
-    if (r === "S") sim++;
-    else if (r === "N") nao++;
-    else if (r === "NA") na++;
-  });
+  if (respostas) {
+    Object.values(respostas).forEach((r) => {
+      if (r === "S") sim++;
+      else if (r === "N") nao++;
+      else if (r === "NA") na++;
+    });
+  }
   const aplicavel = sim + nao;
   const percentual = aplicavel === 0 ? 0 : (sim / aplicavel) * 100;
   return { sim, nao, na, aplicavel, percentual };
