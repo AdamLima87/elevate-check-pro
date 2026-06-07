@@ -121,7 +121,7 @@ export function emptyFuncionario(): Funcionario {
 }
 
 function getNextNumero(): number {
-  if (typeof localStorage === "undefined") return 1;
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return 1;
   const disponiveisRaw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
   const disponiveis = JSON.parse(disponiveisRaw || "[]") as number[];
   
@@ -139,7 +139,7 @@ function getNextNumero(): number {
 }
 
 export function releaseNumero(numero: number) {
-  if (typeof localStorage === "undefined") return;
+  if (typeof window === "undefined" || typeof localStorage === "undefined") return;
   const disponiveisRaw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
   const disponiveis = JSON.parse(disponiveisRaw || "[]") as number[];
   
