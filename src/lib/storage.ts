@@ -14,6 +14,9 @@ export interface Estabelecimento {
   respTecConselho: string;
   respTecRegistro: string;
   dataHora: string;
+  cep?: string;
+  municipio?: string;
+  uf?: string;
 }
 
 export interface Funcionario {

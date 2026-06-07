@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import { AppShell } from "@/components/elevare/AppShell";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,7 @@ import {
   saveRascunho,
   type Estabelecimento,
 } from "@/lib/storage";
-import { ArrowRight, ClipboardCheck } from "lucide-react";
+import { ArrowRight, ClipboardCheck, Loader2 } from "lucide-react";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -30,6 +30,7 @@ function IndexPage() {
   const navigate = useNavigate();
   const [estab, setEstab] = useState<Estabelecimento>(emptyEstabelecimento());
   const [hasRascunho, setHasRascunho] = useState(false);
+  const [loadingCnpj, setLoadingCnpj] = useState(false);
 
   useEffect(() => {
     const r = loadRascunho();
@@ -55,6 +56,43 @@ function IndexPage() {
       finalValue = formatCNPJ(v);
     }
     setEstab((s) => ({ ...s, [k]: finalValue }));
+  };
+
+  const handleCnpjBlur = async () => {
+    const digits = estab.cnpj.replace(/\D/g, "");
+    if (digits.length !== 14) return;
+
+    setLoadingCnpj(true);
+    try {
+      const res = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${digits}`);
+      if (!res.ok) throw new Error("CNPJ não encontrado");
+      
+      const data = await res.json();
+      
+      const endereco = [
+        data.logradouro,
+        data.numero,
+        data.complemento
+      ].filter(Boolean).join(", ");
+
+      setEstab((s) => ({
+        ...s,
+        razaoSocial: data.razao_social || s.razaoSocial,
+        nomeFantasia: data.nome_fantasia || data.razao_social || s.nomeFantasia,
+        atividade: data.cnae_fiscal_descricao || s.atividade,
+        endereco: endereco || s.endereco,
+        bairro: data.bairro || s.bairro,
+        cep: data.cep || "",
+        municipio: data.municipio || "",
+        uf: data.uf || "",
+      }));
+
+      toast.success("Dados do estabelecimento carregados!");
+    } catch (err) {
+      toast.error("CNPJ não encontrado. Preencha os dados manualmente.");
+    } finally {
+      setLoadingCnpj(false);
+    }
   };
 
   const iniciar = () => {
@@ -102,10 +140,23 @@ function IndexPage() {
           <CardTitle className="text-lg">Dados do Estabelecimento</CardTitle>
         </CardHeader>
         <CardContent className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+          <div className="relative">
+            <Field 
+              label="CNPJ *" 
+              value={estab.cnpj} 
+              onChange={(v) => update("cnpj", v)} 
+              onBlur={handleCnpjBlur}
+              placeholder="00.000.000/0000-00" 
+            />
+            {loadingCnpj && (
+              <div className="absolute right-3 top-8">
+                <Loader2 className="h-4 w-4 animate-spin text-primary" />
+              </div>
+            )}
+          </div>
           <Field label="Razão Social *" value={estab.razaoSocial} onChange={(v) => update("razaoSocial", v)} />
           <Field label="Nome Fantasia *" value={estab.nomeFantasia} onChange={(v) => update("nomeFantasia", v)} />
           <Field label="Atividade" value={estab.atividade} onChange={(v) => update("atividade", v)} />
-          <Field label="CNPJ *" value={estab.cnpj} onChange={(v) => update("cnpj", v)} placeholder="00.000.000/0000-00" />
           <Field label="Endereço" value={estab.endereco} onChange={(v) => update("endereco", v)} className="sm:col-span-2" />
           <Field label="Bairro" value={estab.bairro} onChange={(v) => update("bairro", v)} />
           <Field label="Data e Hora da inspeção *" type="datetime-local" value={estab.dataHora} onChange={(v) => update("dataHora", v)} />
@@ -147,6 +198,7 @@ function Field({
   label,
   value,
   onChange,
+  onBlur,
   type = "text",
   placeholder,
   className,
@@ -154,6 +206,7 @@ function Field({
   label: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   type?: string;
   placeholder?: string;
   className?: string;
@@ -161,7 +214,13 @@ function Field({
   return (
     <div className={className}>
       <Label className="mb-1.5 block text-xs font-medium text-muted-foreground">{label}</Label>
-      <Input type={type} value={value} onChange={(e) => onChange(e.target.value)} placeholder={placeholder} />
+      <Input 
+        type={type} 
+        value={value} 
+        onChange={(e) => onChange(e.target.value)} 
+        onBlur={onBlur}
+        placeholder={placeholder} 
+      />
     </div>
   );
 }
