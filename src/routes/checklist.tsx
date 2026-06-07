@@ -326,11 +326,11 @@ function ApendiceB({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
           </Button>
         </div>
         <div className="space-y-3">
-          {insp.dados.funcionarios.length === 0 && (
+          {insp.dados?.funcionarios?.length === 0 && (
             <p className="text-sm text-muted-foreground">Nenhum funcionário cadastrado.</p>
           )}
           <Accordion type="multiple" className="space-y-2">
-            {insp.dados.funcionarios.map((f: Funcionario, idx: number) => (
+            {insp.dados?.funcionarios?.map((f: Funcionario, idx: number) => (
               <AccordionItem key={idx} value={`f-${idx}`} className="rounded-lg border bg-background">
                 <AccordionTrigger className="px-4 py-3 hover:no-underline">
                   <span className="text-sm font-medium">
