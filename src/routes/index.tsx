@@ -12,6 +12,7 @@ import {
   loadRascunho,
   newInspecao,
   saveRascunho,
+  saveToHistorico,
   type Estabelecimento,
 } from "@/lib/storage";
 import { ArrowRight, ClipboardCheck, Loader2 } from "lucide-react";
@@ -105,6 +106,7 @@ function IndexPage() {
     const existing = loadRascunho();
     const insp = existing && !existing.finalizada ? { ...existing, estabelecimento: estab } : { ...newInspecao(), estabelecimento: estab };
     saveRascunho(insp);
+    saveToHistorico(insp);
     navigate({ to: "/checklist" });
   };
 

@@ -18,6 +18,8 @@ import {
   loadRascunho,
   newInspecao,
   saveRascunho,
+  saveToHistorico,
+  calcularPercentual,
   type Funcionario,
   type Inspecao,
   type Resposta,
@@ -51,7 +53,10 @@ function ChecklistPage() {
     setInsp((cur) => {
       if (!cur) return cur;
       const next = updater(cur);
+      const stats = calcularPercentual(next.respostas);
+      next.percentual = stats.percentual;
       saveRascunho(next);
+      saveToHistorico(next);
       return next;
     });
   };

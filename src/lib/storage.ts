@@ -50,6 +50,7 @@ export interface QuestionarioEstab {
 
 export interface Inspecao {
   id: string;
+  numero: number;
   criadoEm: string;
   atualizadoEm: string;
   estabelecimento: Estabelecimento;
@@ -63,6 +64,8 @@ export interface Inspecao {
 
 const HISTORICO_KEY = "elevare:historico";
 const RASCUNHO_KEY = "elevare:rascunho";
+const NUMEROS_DISPONIVEIS_KEY = "elevare:numeros_disponiveis";
+const PROXIMO_NUMERO_KEY = "elevare:proximo_numero";
 
 export function emptyEstabelecimento(): Estabelecimento {
   return {
@@ -114,9 +117,38 @@ export function emptyFuncionario(): Funcionario {
   };
 }
 
+function getNextNumero(): number {
+  if (typeof window === "undefined") return 1;
+  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  if (disponiveis.length > 0) {
+    const menor = Math.min(...disponiveis);
+    const novosDisponiveis = disponiveis.filter((n) => n !== menor);
+    localStorage.setItem(NUMEROS_DISPONIVEIS_KEY, JSON.stringify(novosDisponiveis));
+    return menor;
+  }
+  const proximo = parseInt(localStorage.getItem(PROXIMO_NUMERO_KEY) || "1", 10);
+  localStorage.setItem(PROXIMO_NUMERO_KEY, (proximo + 1).toString());
+  return proximo;
+}
+
+export function releaseNumero(numero: number) {
+  if (typeof window === "undefined") return;
+  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  if (!disponiveis.includes(numero)) {
+    disponiveis.push(numero);
+    disponiveis.sort((a, b) => a - b);
+    localStorage.setItem(NUMEROS_DISPONIVEIS_KEY, JSON.stringify(disponiveis));
+  }
+}
+
+export function formatNumero(n: number) {
+  return `#${n.toString().padStart(3, "0")}`;
+}
+
 export function newInspecao(): Inspecao {
   return {
     id: crypto.randomUUID(),
+    numero: getNextNumero(),
     criadoEm: new Date().toISOString(),
     atualizadoEm: new Date().toISOString(),
     estabelecimento: emptyEstabelecimento(),
@@ -168,8 +200,13 @@ export function saveToHistorico(insp: Inspecao) {
 }
 
 export function deleteFromHistorico(id: string) {
-  const list = loadHistorico().filter((i) => i.id !== id);
-  localStorage.setItem(HISTORICO_KEY, JSON.stringify(list));
+  const list = loadHistorico();
+  const item = list.find((i) => i.id === id);
+  if (item && !item.finalizada) {
+    releaseNumero(item.numero);
+  }
+  const filtered = list.filter((i) => i.id !== id);
+  localStorage.setItem(HISTORICO_KEY, JSON.stringify(filtered));
 }
 
 export function calcularPercentual(respostas: Record<string, Resposta>): {
