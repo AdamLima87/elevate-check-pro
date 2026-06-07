@@ -38,13 +38,21 @@ function ChecklistPage() {
   const [insp, setInsp] = useState<Inspecao | null>(null);
 
   useEffect(() => {
-    let r = loadRascunho();
-    if (!r) {
-      r = newInspecao();
+    try {
+      let r = loadRascunho();
+      if (!r) {
+        r = newInspecao();
+        saveRascunho(r);
+        saveToHistorico(r);
+      }
+      setInsp(r);
+    } catch (e) {
+      console.error("Erro ao carregar inspeção:", e);
+      toast.error("Erro ao carregar dados. Iniciando nova inspeção.");
+      const r = newInspecao();
       saveRascunho(r);
-      saveToHistorico(r);
+      setInsp(r);
     }
-    setInsp(r);
   }, []);
 
   if (!insp) return null;
