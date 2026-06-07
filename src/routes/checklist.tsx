@@ -270,7 +270,7 @@ function ApendiceB({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
   const q = insp.dados?.questionario;
   if (!q) return null;
   const setQ = <K extends keyof typeof q>(k: K, v: (typeof q)[K]) => {
-    persist((i) => ({ ...i, dados: { ...i.dados, questionario: { ...i.dados.questionario, [k]: v } } }));
+    persist((i) => ({ ...i, dados: { ...i.dados, questionario: { ...(i.dados?.questionario || {}), [k]: v } } }));
   };
   const toggleUniforme = (item: string) => {
     const has = q.uniformeItens.includes(item);
