@@ -122,21 +122,27 @@ export function emptyFuncionario(): Funcionario {
 
 function getNextNumero(): number {
   if (typeof localStorage === "undefined") return 1;
-  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  const disponiveisRaw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
+  const disponiveis = JSON.parse(disponiveisRaw || "[]") as number[];
+  
   if (disponiveis.length > 0) {
     const menor = Math.min(...disponiveis);
     const novosDisponiveis = disponiveis.filter((n) => n !== menor);
     localStorage.setItem(NUMEROS_DISPONIVEIS_KEY, JSON.stringify(novosDisponiveis));
     return menor;
   }
-  const proximo = parseInt(localStorage.getItem(PROXIMO_NUMERO_KEY) || "1", 10);
+  
+  const proximoRaw = localStorage.getItem(PROXIMO_NUMERO_KEY);
+  const proximo = parseInt(proximoRaw || "1", 10);
   localStorage.setItem(PROXIMO_NUMERO_KEY, (proximo + 1).toString());
   return proximo;
 }
 
 export function releaseNumero(numero: number) {
   if (typeof localStorage === "undefined") return;
-  const disponiveis = JSON.parse(localStorage.getItem(NUMEROS_DISPONIVEIS_KEY) || "[]") as number[];
+  const disponiveisRaw = localStorage.getItem(NUMEROS_DISPONIVEIS_KEY);
+  const disponiveis = JSON.parse(disponiveisRaw || "[]") as number[];
+  
   if (!disponiveis.includes(numero)) {
     disponiveis.push(numero);
     disponiveis.sort((a, b) => a - b);
