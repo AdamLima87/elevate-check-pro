@@ -277,7 +277,7 @@ function ApendiceB({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
     setQ("uniformeItens", has ? q.uniformeItens.filter((x: string) => x !== item) : [...q.uniformeItens, item]);
   };
 
-  const addFunc = () => persist((i) => ({ ...i, dados: { ...i.dados, funcionarios: [...i.dados.funcionarios, emptyFuncionario()] } }));
+  const addFunc = () => persist((i) => ({ ...i, dados: { ...i.dados, funcionarios: [...(i.dados?.funcionarios || []), emptyFuncionario()] } }));
   const updateFunc = (idx: number, patch: Partial<Funcionario>) =>
     persist((i) => ({
       ...i,
