@@ -118,7 +118,7 @@ export async function gerarPDF(insp: Inspecao) {
   
   // Badge de Classificação
   const tone = cls.tone === "success" ? [26, 77, 46] : cls.tone === "warning" ? [234, 179, 8] : [185, 28, 28];
-  doc.setFillColor(...tone);
+  doc.setFillColor(tone[0], tone[1], tone[2]);
   doc.roundedRect(60, y + 55, 80, 18, 2, 2, "F");
   doc.setFontSize(9);
   doc.setTextColor(255, 255, 255);
@@ -145,7 +145,7 @@ export async function gerarPDF(insp: Inspecao) {
   const barWidth = pageWidth - 120;
   doc.setFillColor(220, 220, 220);
   doc.roundedRect(60, y + 75, barWidth, 4, 2, 2, "F");
-  doc.setFillColor(...tone);
+  doc.setFillColor(tone[0], tone[1], tone[2]);
   doc.roundedRect(60, y + 75, (barWidth * score.percentual) / 100, 4, 2, 2, "F");
 
   y += 110;
@@ -238,6 +238,7 @@ export async function gerarPDF(insp: Inspecao) {
       didParseCell: (data) => {
         if (data.column.index === 2 && data.section === 'body') {
           // Garante que o texto quebra corretamente e não ultrapassa muito o espaço
+          // @ts-ignore - maxLines exist em run-time para overflow: ellipsize mas não no tipo Styles
           data.cell.styles.maxLines = 2;
         }
       }
