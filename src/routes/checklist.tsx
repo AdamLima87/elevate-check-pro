@@ -178,7 +178,7 @@ function ApendiceA({ insp, persist, totalItems }: { insp: Inspecao; persist: (u:
                     </div>
                     <div className="flex gap-1.5">
                       {(["S", "N", "NA"] as const).map((opt) => {
-                        const active = insp.respostas[item.id] === opt;
+                        const active = insp.respostas?.[item.id] === opt;
                         return (
                           <button
                             key={opt}
