@@ -205,6 +205,10 @@ export function deleteFromHistorico(id: string) {
   if (item && !item.finalizada) {
     releaseNumero(item.numero);
   }
+  const rascunho = loadRascunho();
+  if (rascunho && rascunho.id === id) {
+    clearRascunho();
+  }
   const filtered = list.filter((i) => i.id !== id);
   localStorage.setItem(HISTORICO_KEY, JSON.stringify(filtered));
 }

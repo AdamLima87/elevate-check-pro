@@ -3,8 +3,9 @@ import { useEffect, useState } from "react";
 import { AppShell } from "@/components/elevare/AppShell";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { deleteFromHistorico, loadHistorico, saveRascunho, type Inspecao, formatNumero } from "@/lib/storage";
+import { deleteFromHistorico, loadHistorico, saveRascunho, type Inspecao, formatNumero, saveToHistorico } from "@/lib/storage";
 import { classificacao, calcularPercentual } from "@/lib/storage";
+import { totalChecklistItems } from "@/lib/checklist-data";
 import { Trash2, FileText, Play, History, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Toaster } from "@/components/ui/sonner";
@@ -81,11 +82,8 @@ function HistoricoPage() {
               </h2>
               <ul className="space-y-3">
                 {emAndamento.map((insp) => {
-                  const stats = calcularPercentual(insp.respostas);
-                  // Estimativa simples de preenchimento total baseada nos itens do checklist-data
-                  // Para ser preciso precisaríamos saber o total de itens, vamos usar um placeholder visual por enquanto
-                  // ou simplificar com o percentual de conformidade se for o caso, mas o pedido fala em "progresso"
-                  // Como não temos o total de questões aqui, vamos apenas mostrar que está em andamento.
+                  const respondidos = Object.keys(insp.respostas).length;
+                  const progresso = Math.round((respondidos / totalChecklistItems) * 100);
                   return (
                     <InspecaoCard 
                       key={insp.id} 
@@ -94,6 +92,7 @@ function HistoricoPage() {
                       actionLabel="Continuar"
                       onDelete={() => remove(insp.id)}
                       showProgress
+                      progressoLabel={`${progresso}% preenchido`}
                     />
                   );
                 })}
@@ -130,13 +129,15 @@ function InspecaoCard({
   onAction, 
   actionLabel, 
   onDelete,
-  showProgress 
+  showProgress,
+  progressoLabel
 }: { 
   insp: Inspecao; 
   onAction: () => void; 
   actionLabel: string;
   onDelete: () => void;
   showProgress?: boolean;
+  progressoLabel?: string;
 }) {
   const pct = insp.percentual ?? 0;
   const cls = classificacao(pct);
@@ -162,7 +163,7 @@ function InspecaoCard({
                 {insp.finalizada ? "Concluída em:" : "Iniciada em:"} {data}
               </span>
               {showProgress && !insp.finalizada && (
-                <span className="font-medium text-yellow-600">Em andamento</span>
+                <span className="font-medium text-yellow-600">{progressoLabel || "Em andamento"}</span>
               )}
             </div>
           </div>
