@@ -133,13 +133,13 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 
 function ApendiceA({ insp, persist, totalItems }: { insp: Inspecao; persist: (u: (i: Inspecao) => Inspecao) => void, totalItems: number }) {
   const setResposta = (id: string, r: Resposta) => {
-    persist((i) => ({ ...i, respostas: { ...i.respostas, [id]: r } }));
+    persist((i) => ({ ...i, respostas: { ...(i.respostas || {}), [id]: r } }));
   };
 
   const addFoto = (id: string, base64: string) => {
     persist((i) => {
-      const currentFotos = i.dados.fotos?.[id] || [];
-      return { ...i, dados: { ...i.dados, fotos: { ...i.dados.fotos, [id]: [...currentFotos, base64] } } };
+      const currentFotos = i.dados?.fotos?.[id] || [];
+      return { ...i, dados: { ...i.dados, fotos: { ...(i.dados?.fotos || {}), [id]: [...currentFotos, base64] } } };
     });
   };
 
@@ -148,7 +148,7 @@ function ApendiceA({ insp, persist, totalItems }: { insp: Inspecao; persist: (u:
       const currentFotos = i.dados.fotos?.[id] || [];
       return {
         ...i,
-        dados: { ...i.dados, fotos: { ...i.dados.fotos, [id]: currentFotos.filter((_, k) => k !== index) } },
+        dados: { ...i.dados, fotos: { ...(i.dados?.fotos || {}), [id]: currentFotos.filter((_, k) => k !== index) } },
       };
     });
   };
@@ -270,7 +270,7 @@ function ApendiceB({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
   const q = insp.dados?.questionario;
   if (!q) return null;
   const setQ = <K extends keyof typeof q>(k: K, v: (typeof q)[K]) => {
-    persist((i) => ({ ...i, dados: { ...i.dados, questionario: { ...i.dados.questionario, [k]: v } } }));
+    persist((i) => ({ ...i, dados: { ...i.dados, questionario: { ...(i.dados?.questionario || {}), [k]: v } } }));
   };
   const toggleUniforme = (item: string) => {
     const has = q.uniformeItens.includes(item);
