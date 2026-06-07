@@ -22,7 +22,7 @@ import {
   type Inspecao,
   type Resposta,
 } from "@/lib/storage";
-import { ArrowRight, Plus, Trash2 } from "lucide-react";
+import { ArrowRight, Camera, Plus, Trash2, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/checklist")({
@@ -125,6 +125,23 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
     persist((i) => ({ ...i, respostas: { ...i.respostas, [id]: r } }));
   };
 
+  const addFoto = (id: string, base64: string) => {
+    persist((i) => {
+      const currentFotos = i.fotos?.[id] || [];
+      return { ...i, fotos: { ...i.fotos, [id]: [...currentFotos, base64] } };
+    });
+  };
+
+  const removeFoto = (id: string, index: number) => {
+    persist((i) => {
+      const currentFotos = i.fotos?.[id] || [];
+      return {
+        ...i,
+        fotos: { ...i.fotos, [id]: currentFotos.filter((_, k) => k !== index) },
+      };
+    });
+  };
+
   return (
     <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-2">
       {checklistSections.map((sec) => {
@@ -143,31 +160,68 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
             <AccordionContent className="p-0">
               <ul className="divide-y">
                 {sec.items.map((item) => (
-                  <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex-1 text-sm">
-                      <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
-                      {item.text}
+                  <li key={item.id} className="p-3">
+                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex-1 text-sm">
+                        <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
+                        {item.text}
+                      </div>
+                      <div className="flex gap-1.5">
+                        {(["S", "N", "NA"] as const).map((opt) => {
+                          const active = insp.respostas[item.id] === opt;
+                          return (
+                            <button
+                              key={opt}
+                              type="button"
+                              onClick={() => setResposta(item.id, opt)}
+                              className={cn(
+                                "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
+                                active && opt === "S" && "border-success bg-success text-success-foreground",
+                                active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
+                                active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
+                                !active && "bg-background text-muted-foreground hover:bg-accent",
+                              )}
+                            >
+                              {opt}
+                            </button>
+                          );
+                        })}
+                      </div>
                     </div>
-                    <div className="flex gap-1.5">
-                      {(["S", "N", "NA"] as const).map((opt) => {
-                        const active = insp.respostas[item.id] === opt;
-                        return (
+                    
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      {insp.fotos?.[item.id]?.map((foto, idx) => (
+                        <div key={idx} className="group relative h-16 w-16 overflow-hidden rounded-md border">
+                          <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
                           <button
-                            key={opt}
-                            type="button"
-                            onClick={() => setResposta(item.id, opt)}
-                            className={cn(
-                              "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
-                              active && opt === "S" && "border-success bg-success text-success-foreground",
-                              active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
-                              active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
-                              !active && "bg-background text-muted-foreground hover:bg-accent",
-                            )}
+                            onClick={() => removeFoto(item.id, idx)}
+                            className="absolute right-0 top-0 bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
                           >
-                            {opt}
+                            <X className="h-3 w-3" />
                           </button>
-                        );
-                      })}
+                        </div>
+                      ))}
+                      <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-muted-foreground hover:bg-accent">
+                        <Camera className="h-5 w-5" />
+                        <span className="text-[10px]">Foto</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          capture="environment"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                const base64 = ev.target?.result as string;
+                                addFoto(item.id, base64);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
                     </div>
                   </li>
                 ))}

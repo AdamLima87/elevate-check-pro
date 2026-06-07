@@ -51,6 +51,7 @@ export interface Inspecao {
   atualizadoEm: string;
   estabelecimento: Estabelecimento;
   respostas: Record<string, Resposta>;
+  fotos: Record<string, string[]>;
   questionario: QuestionarioEstab;
   funcionarios: Funcionario[];
   finalizada: boolean;
@@ -117,6 +118,7 @@ export function newInspecao(): Inspecao {
     atualizadoEm: new Date().toISOString(),
     estabelecimento: emptyEstabelecimento(),
     respostas: {},
+    fotos: {},
     questionario: emptyQuestionario(),
     funcionarios: [],
     finalizada: false,
