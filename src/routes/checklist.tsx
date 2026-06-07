@@ -158,48 +158,6 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-0">
-              {/* Fotos por Tópico */}
-              <div className="border-b bg-muted/30 p-4">
-                <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                  Fotos do Tópico: {sec.title}
-                </Label>
-                <div className="flex flex-wrap gap-2">
-                  {insp.fotos?.[sec.id]?.map((foto, idx) => (
-                    <div key={idx} className="group relative h-20 w-20 overflow-hidden rounded-md border bg-background shadow-sm">
-                      <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
-                      <button
-                        onClick={() => removeFoto(sec.id, idx)}
-                        className="absolute right-0 top-0 bg-destructive/90 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                        title="Remover foto"
-                      >
-                        <X className="h-3 w-3" />
-                      </button>
-                    </div>
-                  ))}
-                  <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
-                    <Camera className="h-6 w-6" />
-                    <span className="mt-1 text-[10px] font-medium">Adicionar</span>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      capture="environment"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) {
-                          const reader = new FileReader();
-                          reader.onload = (ev) => {
-                            const base64 = ev.target?.result as string;
-                            addFoto(sec.id, base64);
-                          };
-                          reader.readAsDataURL(file);
-                        }
-                      }}
-                    />
-                  </label>
-                </div>
-              </div>
-
               <ul className="divide-y">
                 {sec.items.map((item) => (
                   <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
@@ -231,6 +189,48 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
                   </li>
                 ))}
               </ul>
+
+              {/* Fotos ao final da seção */}
+              <div className="border-t bg-muted/20 p-4">
+                <Label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Evidências Fotográficas do Tópico
+                </Label>
+                <div className="flex flex-wrap gap-3">
+                  {insp.fotos?.[sec.id]?.map((foto, idx) => (
+                    <div key={idx} className="group relative h-24 w-24 overflow-hidden rounded-lg border bg-background shadow-sm">
+                      <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
+                      <button
+                        onClick={() => removeFoto(sec.id, idx)}
+                        className="absolute right-0 top-0 rounded-bl-lg bg-destructive/90 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        title="Remover foto"
+                      >
+                        <X className="h-3.5 w-3.5" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
+                    <Camera className="h-7 w-7" />
+                    <span className="mt-1.5 text-[11px] font-medium">Anexar Foto</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const base64 = ev.target?.result as string;
+                            addFoto(sec.id, base64);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
             </AccordionContent>
           </AccordionItem>
         );
