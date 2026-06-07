@@ -137,7 +137,8 @@ export function gerarPDF(insp: Inspecao) {
         doc.addImage(foto.url, "JPEG", xPos, lastY, imgWidth, imgHeight);
         doc.setFontSize(8);
         doc.setFont("helvetica", "normal");
-        doc.text(`Item ${foto.item}`, xPos, lastY + imgHeight + 10);
+        const secao = checklistSections.find((s) => s.id === foto.item);
+        doc.text(`Tópico: ${secao?.title || foto.item}`, xPos, lastY + imgHeight + 10);
       } catch (e) {
         console.warn("Erro ao adicionar imagem ao PDF", e);
       }

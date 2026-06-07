@@ -143,7 +143,7 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
   };
 
   return (
-    <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-2">
+    <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-3">
       {checklistSections.map((sec) => {
         const total = sec.items.length;
         const done = sec.items.filter((it) => insp.respostas[it.id] != null).length;
@@ -151,77 +151,82 @@ function ApendiceA({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
           <AccordionItem key={sec.id} value={sec.id} className="overflow-hidden rounded-lg border bg-card">
             <AccordionTrigger className="bg-primary px-4 py-3 text-left text-primary-foreground hover:no-underline">
               <div className="flex w-full items-center justify-between gap-2 pr-2">
-                <span className="text-sm font-semibold uppercase tracking-wide">{sec.title}</span>
+                <span className="text-sm font-bold uppercase tracking-wide">{sec.title}</span>
                 <span className="rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[11px] font-medium">
                   {done}/{total}
                 </span>
               </div>
             </AccordionTrigger>
             <AccordionContent className="p-0">
+              {/* Fotos por Tópico */}
+              <div className="border-b bg-muted/30 p-4">
+                <Label className="mb-2 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Fotos do Tópico: {sec.title}
+                </Label>
+                <div className="flex flex-wrap gap-2">
+                  {insp.fotos?.[sec.id]?.map((foto, idx) => (
+                    <div key={idx} className="group relative h-20 w-20 overflow-hidden rounded-md border bg-background shadow-sm">
+                      <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
+                      <button
+                        onClick={() => removeFoto(sec.id, idx)}
+                        className="absolute right-0 top-0 bg-destructive/90 p-1 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                        title="Remover foto"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </div>
+                  ))}
+                  <label className="flex h-20 w-20 cursor-pointer flex-col items-center justify-center rounded-md border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
+                    <Camera className="h-6 w-6" />
+                    <span className="mt-1 text-[10px] font-medium">Adicionar</span>
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      capture="environment"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = (ev) => {
+                            const base64 = ev.target?.result as string;
+                            addFoto(sec.id, base64);
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+                  </label>
+                </div>
+              </div>
+
               <ul className="divide-y">
                 {sec.items.map((item) => (
-                  <li key={item.id} className="p-3">
-                    <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex-1 text-sm">
-                        <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
-                        {item.text}
-                      </div>
-                      <div className="flex gap-1.5">
-                        {(["S", "N", "NA"] as const).map((opt) => {
-                          const active = insp.respostas[item.id] === opt;
-                          return (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setResposta(item.id, opt)}
-                              className={cn(
-                                "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
-                                active && opt === "S" && "border-success bg-success text-success-foreground",
-                                active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
-                                active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
-                                !active && "bg-background text-muted-foreground hover:bg-accent",
-                              )}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
+                  <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex-1 text-sm">
+                      <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
+                      {item.text}
                     </div>
-                    
-                    <div className="mt-3 flex flex-wrap gap-2">
-                      {insp.fotos?.[item.id]?.map((foto, idx) => (
-                        <div key={idx} className="group relative h-16 w-16 overflow-hidden rounded-md border">
-                          <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
+                    <div className="flex gap-1.5">
+                      {(["S", "N", "NA"] as const).map((opt) => {
+                        const active = insp.respostas[item.id] === opt;
+                        return (
                           <button
-                            onClick={() => removeFoto(item.id, idx)}
-                            className="absolute right-0 top-0 bg-destructive/80 p-0.5 text-destructive-foreground opacity-0 transition-opacity group-hover:opacity-100"
+                            key={opt}
+                            type="button"
+                            onClick={() => setResposta(item.id, opt)}
+                            className={cn(
+                              "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
+                              active && opt === "S" && "border-success bg-success text-success-foreground",
+                              active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
+                              active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
+                              !active && "bg-background text-muted-foreground hover:bg-accent",
+                            )}
                           >
-                            <X className="h-3 w-3" />
+                            {opt}
                           </button>
-                        </div>
-                      ))}
-                      <label className="flex h-16 w-16 cursor-pointer flex-col items-center justify-center rounded-md border border-dashed text-muted-foreground hover:bg-accent">
-                        <Camera className="h-5 w-5" />
-                        <span className="text-[10px]">Foto</span>
-                        <input
-                          type="file"
-                          accept="image/*"
-                          className="hidden"
-                          capture="environment"
-                          onChange={(e) => {
-                            const file = e.target.files?.[0];
-                            if (file) {
-                              const reader = new FileReader();
-                              reader.onload = (ev) => {
-                                const base64 = ev.target?.result as string;
-                                addFoto(item.id, base64);
-                              };
-                              reader.readAsDataURL(file);
-                            }
-                          }}
-                        />
-                      </label>
+                        );
+                      })}
                     </div>
                   </li>
                 ))}
