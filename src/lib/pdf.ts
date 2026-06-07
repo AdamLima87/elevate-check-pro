@@ -29,7 +29,7 @@ export function gerarPDF(insp: Inspecao) {
   doc.text("Relatório de Inspeção", 40, y);
   y += 18;
 
-  const e = insp.estabelecimento;
+  const e = insp.dados.estabelecimento;
   doc.setFont("helvetica", "normal");
   doc.setFontSize(10);
   const lines = [
@@ -89,7 +89,7 @@ export function gerarPDF(insp: Inspecao) {
   });
 
   if (ncRows.length) {
-    const lastY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
+    const lastY = (doc as any).lastAutoTable?.finalY ?? y;
     autoTable(doc, {
       startY: lastY + 16,
       head: [["Item", "Seção", "Não Conformidade"]],
@@ -103,12 +103,12 @@ export function gerarPDF(insp: Inspecao) {
 
   // Fotos
   const fotosExistentes: { item: string; url: string }[] = [];
-  Object.entries(insp.fotos || {}).forEach(([itemId, urls]) => {
-    urls.forEach((url) => fotosExistentes.push({ item: itemId, url }));
+  Object.entries(insp.dados.fotos || {}).forEach(([itemId, urls]: [string, any]) => {
+    urls.forEach((url: string) => fotosExistentes.push({ item: itemId, url }));
   });
 
   if (fotosExistentes.length) {
-    let lastY = (doc as unknown as { lastAutoTable?: { finalY: number } }).lastAutoTable?.finalY ?? y;
+    let lastY = (doc as any).lastAutoTable?.finalY ?? y;
     if (lastY > doc.internal.pageSize.getHeight() - 150) {
       doc.addPage();
       lastY = 40;
@@ -165,6 +165,6 @@ export function gerarPDF(insp: Inspecao) {
     );
   }
 
-  const filename = `inspecao-${(insp.estabelecimento.nomeFantasia || "elevare").replace(/\s+/g, "_")}.pdf`;
+  const filename = `inspecao-${(insp.estabelecimento || "elevare").replace(/\s+/g, "_")}.pdf`;
   doc.save(filename);
 }
