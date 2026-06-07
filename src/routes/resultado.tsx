@@ -40,7 +40,7 @@ function ResultadoPage() {
 
   useEffect(() => {
     const r = loadRascunho();
-    if (!r || !r.estabelecimento.razaoSocial) {
+    if (!r || !r.dados.estabelecimento.razaoSocial) {
       navigate({ to: "/" });
       return;
     }
@@ -75,7 +75,12 @@ function ResultadoPage() {
 
   if (!insp || !score || !cls) return null;
 
-  const finalInsp: Inspecao = { ...insp, finalizada: true, percentual: score.percentual };
+  const finalInsp: Inspecao = { 
+    ...insp, 
+    status: "concluida", 
+    conformidade: score.percentual,
+    dataConclusao: new Date().toISOString()
+  };
 
   const salvar = () => {
     saveToHistorico(finalInsp);
@@ -89,14 +94,14 @@ function ResultadoPage() {
   };
 
   const compartilharWhats = () => {
-    const msg = `*Checklist Elevare*%0A${insp.estabelecimento.nomeFantasia}%0APontuação: ${score.percentual.toFixed(1)}%25 - ${cls.label}%0ANão conformidades: ${naoConformidades.length}`;
+    const msg = `*Checklist Elevare*%0A${insp.estabelecimento}%0APontuação: ${score.percentual.toFixed(1)}%25 - ${cls.label}%0ANão conformidades: ${naoConformidades.length}`;
     window.open(`https://wa.me/?text=${msg}`, "_blank");
   };
 
   const enviarEmail = () => {
-    const subject = encodeURIComponent(`Inspeção sanitária — ${insp.estabelecimento.nomeFantasia}`);
+    const subject = encodeURIComponent(`Inspeção sanitária — ${insp.estabelecimento}`);
     const body = encodeURIComponent(
-      `Estabelecimento: ${insp.estabelecimento.razaoSocial}\nPontuação: ${score.percentual.toFixed(1)}% — ${cls.label}\nNão conformidades: ${naoConformidades.length}`,
+      `Estabelecimento: ${insp.dados.estabelecimento.razaoSocial}\nPontuação: ${score.percentual.toFixed(1)}% — ${cls.label}\nNão conformidades: ${naoConformidades.length}`,
     );
     window.location.href = `mailto:?subject=${subject}&body=${body}`;
   };
@@ -115,8 +120,8 @@ function ResultadoPage() {
       <Toaster richColors position="top-center" />
       <div className="mb-4">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">Resultado da Inspeção</div>
-        <h1 className="text-2xl font-semibold">{insp.estabelecimento.nomeFantasia}</h1>
-        <p className="text-sm text-muted-foreground">{insp.estabelecimento.razaoSocial}</p>
+        <h1 className="text-2xl font-semibold">{insp.estabelecimento}</h1>
+        <p className="text-sm text-muted-foreground">{insp.dados.estabelecimento.razaoSocial}</p>
       </div>
 
       <Card className={cn("border-2", cls.tone === "success" && "border-success/40", cls.tone === "warning" && "border-warning/50", cls.tone === "destructive" && "border-destructive/40")}>
