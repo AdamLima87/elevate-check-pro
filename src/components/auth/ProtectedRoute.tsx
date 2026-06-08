@@ -22,15 +22,27 @@ export function ProtectedRoute({ children, allowedProfiles }: ProtectedRouteProp
         return;
       }
 
-      const { data: profile } = await supabase
+      const { data: profile, error: profileError } = await supabase
         .from("profiles")
         .select("perfil, ativo")
         .eq("id", session.user.id)
         .single();
 
-      if (!profile || !profile.ativo) {
+      if (profileError || !profile) {
         await supabase.auth.signOut();
-        navigate({ to: "/login" });
+        navigate({ 
+          to: "/login",
+          search: { error: "profile_not_found" }
+        });
+        return;
+      }
+
+      if (!profile.ativo) {
+        await supabase.auth.signOut();
+        navigate({ 
+          to: "/login",
+          search: { error: "account_disabled" }
+        });
         return;
       }
 
