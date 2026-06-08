@@ -14,6 +14,39 @@ export type Database = {
   }
   public: {
     Tables: {
+      client_user_queue: {
+        Row: {
+          cnpj: string
+          created_at: string | null
+          email: string
+          error_message: string | null
+          id: string
+          nome: string | null
+          processed_at: string | null
+          status: string | null
+        }
+        Insert: {
+          cnpj: string
+          created_at?: string | null
+          email: string
+          error_message?: string | null
+          id?: string
+          nome?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Update: {
+          cnpj?: string
+          created_at?: string | null
+          email?: string
+          error_message?: string | null
+          id?: string
+          nome?: string | null
+          processed_at?: string | null
+          status?: string | null
+        }
+        Relationships: []
+      }
       inspecoes: {
         Row: {
           cnpj: string | null
