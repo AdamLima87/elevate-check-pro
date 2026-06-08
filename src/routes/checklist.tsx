@@ -114,7 +114,12 @@ function ChecklistPage() {
         </Tabs>
 
         <div className="mt-6 flex justify-end">
-          <Button size="lg" onClick={finalizar} className="gap-2">
+          <Button 
+            size="lg" 
+            onClick={finalizar} 
+            className="gap-2"
+            disabled={respondidos < totalChecklistItems}
+          >
             Finalizar e ver resultado <ArrowRight className="h-4 w-4" />
           </Button>
         </div>
