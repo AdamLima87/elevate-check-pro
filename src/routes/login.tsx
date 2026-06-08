@@ -41,17 +41,6 @@ function LoginPage() {
     }
   }, [searchError, navigate]);
 
-  useEffect(() => {
-    async function checkAdmin() {
-      const { count } = await supabase
-        .from("profiles")
-        .select("*", { count: "exact", head: true })
-        .eq("perfil", "admin");
-      
-      setIsAdminExists(!!count && count > 0);
-    }
-    checkAdmin();
-  }, []);
 
 
   const handleLogin = async (e: React.FormEvent) => {
