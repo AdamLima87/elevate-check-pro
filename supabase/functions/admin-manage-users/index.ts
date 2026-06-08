@@ -12,36 +12,39 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseClient = createClient(
-      Deno.env.get('SUPABASE_URL') ?? '',
-      Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-      { global: { headers: { Authorization: req.headers.get('Authorization')! } } }
-    )
-
-    // Get the user from the token
-    const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
-    if (userError || !user) throw new Error('Unauthorized')
-
-    // Check if the user is an admin
-    const { data: profile, error: profileError } = await supabaseClient
-      .from('profiles')
-      .select('perfil')
-      .eq('id', user.id)
-      .single()
-
-    if (profileError || profile?.perfil !== 'admin') {
-      throw new Error('Unauthorized: Only admins can manage users')
-    }
-
-    // Initialize Admin Client (with Service Role Key)
     const supabaseAdmin = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    const { action, userData } = await req.json()
+    const authHeader = req.headers.get('Authorization')
+    let isAuthorized = false
 
-    if (action === 'create') {
+    if (authHeader) {
+      const supabaseClient = createClient(
+        Deno.env.get('SUPABASE_URL') ?? '',
+        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
+        { global: { headers: { Authorization: authHeader } } }
+      )
+
+      const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+      if (!userError && user) {
+        const { data: profile } = await supabaseClient
+          .from('profiles')
+          .select('perfil')
+          .eq('id', user.id)
+          .single()
+        
+        if (profile?.perfil === 'admin' || profile?.perfil === 'consultor') {
+          isAuthorized = true
+        }
+      }
+    }
+
+    const { action, userData, queueId } = await req.json()
+
+    // Internal system actions or admin actions
+    if (action === 'create_client' || action === 'create') {
       const { email, password, nome, perfil, cnpj } = userData
 
       // 1. Create user in Auth
@@ -52,15 +55,44 @@ serve(async (req) => {
         user_metadata: { nome, perfil, cnpj, force_password_change: perfil === 'consultor' }
       })
 
-      if (authError) throw authError
+      if (authError) {
+        if (authError.message.includes('already has been registered')) {
+          // If user exists, try to update profile if it's a client
+          const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
+          const user = existingUser.users.find(u => u.email === email)
+          if (user && perfil === 'cliente') {
+             await supabaseAdmin.from('profiles').update({ cnpj }).eq('id', user.id)
+          }
+          
+          if (queueId) {
+            await supabaseAdmin.from('client_user_queue').update({ status: 'completed', processed_at: new Date().toISOString() }).eq('id', queueId)
+          }
 
-      // 2. Profile should be created by trigger, but we update it to be sure
+          return new Response(JSON.stringify({ message: 'User already exists, updated profile if needed' }), {
+            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+            status: 200,
+          })
+        }
+        throw authError
+      }
+
+      // 2. Update profile
       const { error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ nome, email, perfil, cnpj: perfil === 'cliente' ? cnpj : null, force_password_change: perfil === 'consultor' })
+        .update({ 
+          nome, 
+          email, 
+          perfil, 
+          cnpj: perfil === 'cliente' ? cnpj : null, 
+          force_password_change: perfil === 'consultor' 
+        })
         .eq('id', authUser.user.id)
 
       if (updateError) throw updateError
+
+      if (queueId) {
+        await supabaseAdmin.from('client_user_queue').update({ status: 'completed', processed_at: new Date().toISOString() }).eq('id', queueId)
+      }
 
       return new Response(JSON.stringify({ user: authUser.user }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -68,7 +100,7 @@ serve(async (req) => {
       })
     }
 
-    throw new Error('Invalid action')
+    throw new Error('Invalid action or unauthorized')
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

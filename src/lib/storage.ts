@@ -263,13 +263,16 @@ export async function saveToHistorico(insp: Inspecao) {
   const { data: { session } } = await supabase.auth.getSession();
   if (session?.user) {
     try {
+      const cnpj = insp.dados?.estabelecimento?.cnpj || null;
+      const cleanCnpj = cnpj ? cnpj.replace(/\D/g, "") : null;
+      
       await supabase.from("inspecoes").upsert({
         id: insp.id,
         consultor_id: session.user.id,
         numero: insp.numero,
         status: insp.status,
         estabelecimento_nome: insp.estabelecimento,
-        cnpj: insp.dados?.estabelecimento?.cnpj || null,
+        cnpj: cleanCnpj,
         data_inicio: insp.dataInicio,
         data_conclusao: insp.dataConclusao,
         progresso: insp.progresso,
@@ -277,6 +280,28 @@ export async function saveToHistorico(insp: Inspecao) {
         dados: insp.dados as any,
         respostas: insp.respostas as any,
       });
+
+      // If status changed to concluded, check for client creation queue
+      if (insp.status === "concluida") {
+        const legalEmail = insp.dados?.estabelecimento?.respLegalEmail || insp.dados?.estabelecimento?.email;
+        const legalName = insp.dados?.estabelecimento?.respLegalNome;
+        
+        if (legalEmail && cleanCnpj) {
+          // Call Edge Function to create client
+          await supabase.functions.invoke("admin-manage-users", {
+            body: {
+              action: "create_client",
+              userData: {
+                email: legalEmail,
+                password: cleanCnpj, // CNPJ only numbers as password
+                nome: legalName || insp.estabelecimento,
+                perfil: "cliente",
+                cnpj: cleanCnpj
+              }
+            }
+          });
+        }
+      }
     } catch (err) {
       console.error("Failed to sync to Cloud:", err);
     }

@@ -24,7 +24,6 @@ function LoginPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [cnpj, setCnpj] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
   const [step, setStep] = useState<"selection" | "credentials">("selection");
@@ -44,24 +43,28 @@ function LoginPage() {
     }
   }, [searchError, navigate]);
 
-  const handleCnpjChange = (value: string) => {
-    // Remove tudo que não é dígito
-    const digits = value.replace(/\D/g, "");
-    
-    // Aplica a máscara: XX.XXX.XXX/XXXX-XX
-    let formatted = digits;
-    if (digits.length <= 2) {
-      formatted = digits;
-    } else if (digits.length <= 5) {
-      formatted = digits.replace(/^(\d{2})(\d)/, "$1.$2");
-    } else if (digits.length <= 8) {
-      formatted = digits.replace(/^(\d{2})(\d{3})(\d)/, "$1.$2.$3");
-    } else if (digits.length <= 12) {
-      formatted = digits.replace(/^(\d{2})(\d{3})(\d{3})(\d)/, "$1.$2.$3/$4");
+  const handlePasswordChange = (value: string) => {
+    // Only allow numbers for clients
+    if (userType === "cliente") {
+      const filtered = value.replace(/\D/g, "").slice(0, 14);
+      setPassword(filtered);
     } else {
-      formatted = digits.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d)/, "$1.$2.$3/$4-$5");
+      setPassword(value);
     }
-    setCnpj(formatted.substring(0, 18));
+  };
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (userType === "cliente") {
+      // Allow only numbers and control keys
+      const allowedKeys = ["Backspace", "Delete", "Tab", "Enter", "ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown", "v", "c"];
+      const isNumber = /^[0-9]$/.test(e.key);
+      const isControl = allowedKeys.includes(e.key);
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      if (!isNumber && !isControl && !isCmdOrCtrl) {
+        e.preventDefault();
+      }
+    }
   };
 
   const handleLogin = async (e: React.FormEvent) => {
@@ -151,16 +154,16 @@ function LoginPage() {
       return;
     }
 
-    // Validar CNPJ para clientes
-    if (userType === "cliente") {
-      const cleanInputCnpj = cnpj.replace(/\D/g, "");
-      const cleanProfileCnpj = (profile.cnpj || "").replace(/\D/g, "");
-      
-      if (cleanInputCnpj !== cleanProfileCnpj) {
-        await supabase.auth.signOut();
-        throw new Error("CNPJ não corresponde ao seu cadastro.");
-      }
-    }
+    // Validar CNPJ para clientes (ja validado pela senha e login auth)
+    // if (userType === "cliente") {
+    //   const cleanInputCnpj = password.replace(/\D/g, "");
+    //   const cleanProfileCnpj = (profile.cnpj || "").replace(/\D/g, "");
+    //   
+    //   if (cleanInputCnpj !== cleanProfileCnpj) {
+    //     await supabase.auth.signOut();
+    //     throw new Error("CNPJ não corresponde ao seu cadastro.");
+    //   }
+    // }
 
     if (profile?.force_password_change) {
       navigate({ to: "/perfil" });
@@ -270,17 +273,10 @@ function LoginPage() {
               </div>
 
               {userType === "cliente" && (
-                <div className="space-y-2">
-                  <Label htmlFor="cnpj" className="text-slate-700">CNPJ do estabelecimento</Label>
-                  <Input
-                    id="cnpj"
-                    type="text"
-                    placeholder="00.000.000/0000-00"
-                    value={cnpj}
-                    onChange={(e) => handleCnpjChange(e.target.value)}
-                    className="focus-visible:ring-[#1a4d2e]"
-                    required
-                  />
+                <div className="space-y-1">
+                  <p className="text-xs text-slate-500 bg-slate-100 p-2 rounded border border-slate-200">
+                    Dica: Sua senha é o CNPJ do estabelecimento (somente números)
+                  </p>
                 </div>
               )}
 
@@ -292,17 +288,26 @@ function LoginPage() {
                   id="password"
                   type="password"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) => handlePasswordChange(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder={userType === "cliente" ? "CNPJ (somente números)" : "Sua senha"}
                   className="focus-visible:ring-[#1a4d2e]"
                   required
                 />
+                {userType === "cliente" && (
+                  <div className="flex justify-end">
+                    <span className="text-[10px] text-slate-400 font-medium">
+                      {password.length}/14 dígitos
+                    </span>
+                  </div>
+                )}
               </div>
 
               <div className="pt-2">
                 <Button 
                   type="submit" 
                   className="w-full bg-[#1a4d2e] hover:bg-[#1a4d2e]/90 text-white font-semibold py-6 h-auto transition-colors" 
-                  disabled={loading}
+                  disabled={loading || (userType === "cliente" && password.length !== 14)}
                 >
                   {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : "Entrar"}
                 </Button>

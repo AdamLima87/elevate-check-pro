@@ -17,38 +17,49 @@ export const Route = createFileRoute("/meu-resultado")({
 });
 
 function ClientePage() {
-  const [cnpj, setCnpj] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [inspections, setInspections] = useState<any[]>([]);
-  const [hasSearched, setHasSearched] = useState(false);
   const navigate = useNavigate();
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const cleanCnpj = cnpj.replace(/\D/g, "");
-    if (cleanCnpj.length !== 14) {
-      toast.error("Informe um CNPJ válido com 14 dígitos");
-      return;
+  useEffect(() => {
+    async function loadClientData() {
+      try {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (!user) {
+          navigate({ to: "/login" });
+          return;
+        }
+
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("cnpj")
+          .eq("id", user.id)
+          .single();
+
+        if (!profile?.cnpj) {
+          setLoading(false);
+          return;
+        }
+
+        const { data, error } = await supabase
+          .from("inspecoes")
+          .select("*")
+          .eq("cnpj", profile.cnpj)
+          .eq("status", "concluida")
+          .order("data_conclusao", { ascending: false });
+
+        if (error) throw error;
+        setInspections(data || []);
+      } catch (error: any) {
+        console.error("Erro ao buscar inspeções:", error);
+        toast.error("Erro ao carregar seus resultados.");
+      } finally {
+        setLoading(false);
+      }
     }
 
-    setLoading(true);
-    try {
-      const { data, error } = await supabase
-        .from("inspecoes")
-        .select("*")
-        .eq("cnpj", cleanCnpj)
-        .eq("status", "concluida")
-        .order("data_conclusao", { ascending: false });
-
-      if (error) throw error;
-      setInspections(data || []);
-      setHasSearched(true);
-    } catch (error: any) {
-      toast.error("Erro ao buscar inspeções");
-    } finally {
-      setLoading(false);
-    }
-  };
+    loadClientData();
+  }, [navigate]);
 
   const verRelatorio = (insp: any) => {
     // Redirect to result page with read-only view logic
@@ -64,34 +75,18 @@ function ClientePage() {
           <p className="text-muted-foreground">Consulte os relatórios de inspeção do seu estabelecimento.</p>
         </div>
 
-        <Card className="mb-8">
-          <CardHeader>
-            <CardTitle>Buscar por CNPJ</CardTitle>
-            <CardDescription>Informe o CNPJ do estabelecimento para localizar as inspeções concluídas.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSearch} className="flex gap-4">
-              <div className="flex-1">
-                <Input
-                  placeholder="00.000.000/0000-00"
-                  value={cnpj}
-                  onChange={(e) => setCnpj(e.target.value)}
-                  className="max-w-xs"
-                />
-              </div>
-              <Button type="submit" disabled={loading}>
-                {loading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Search className="mr-2 h-4 w-4" />}
-                Buscar
-              </Button>
-            </form>
-          </CardContent>
-        </Card>
-
-        {hasSearched && (
+        {loading ? (
+          <div className="flex justify-center py-20">
+            <Loader2 className="h-8 w-8 animate-spin text-[#1a4d2e]" />
+          </div>
+        ) : (
           <div className="space-y-4">
-            <h2 className="text-xl font-semibold">Resultados Encontrados</h2>
             {inspections.length === 0 ? (
-              <p className="text-muted-foreground italic text-center py-8">Nenhuma inspeção concluída encontrada para este CNPJ.</p>
+              <Card>
+                <CardContent className="py-12 text-center">
+                  <p className="text-muted-foreground italic text-lg">Nenhuma inspeção disponível para o seu estabelecimento.</p>
+                </CardContent>
+              </Card>
             ) : (
               <div className="grid gap-4">
                 {inspections.map((insp) => {
@@ -123,7 +118,6 @@ function ClientePage() {
                     </Card>
                   );
                 })}
-              </div>
             )}
           </div>
         )}
