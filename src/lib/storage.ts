@@ -16,6 +16,8 @@ export interface Estabelecimento {
   respTecConselho: string;
   respTecRegistro: string;
   dataHora: string;
+  email: string;
+  respLegalEmail: string;
   cep?: string;
   municipio?: string;
   uf?: string;
@@ -87,6 +89,8 @@ export function emptyEstabelecimento(): Estabelecimento {
     respTecConselho: "",
     respTecRegistro: "",
     dataHora: new Date().toISOString().slice(0, 16),
+    email: "",
+    respLegalEmail: "",
   };
 }
 
