@@ -129,31 +129,6 @@ function LoginPage() {
   };
 
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setLoading(true);
-    try {
-      const { error } = await supabase.auth.signUp({
-        email: regData.email,
-        password: regData.password,
-        options: {
-          data: {
-            nome: regData.nome,
-          }
-        }
-      });
-
-      if (error) throw error;
-      
-      toast.success("Administrador criado! Verifique seu e-mail ou faça login.");
-      setShowRegister(false);
-      setIsAdminExists(true);
-    } catch (error: any) {
-      toast.error(error.message || "Erro ao criar administrador");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   const handleResetPassword = async () => {
 
