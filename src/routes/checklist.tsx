@@ -132,7 +132,6 @@ function ChecklistPage() {
             size="lg" 
             onClick={finalizar} 
             className="gap-2"
-            disabled={respondidos < totalChecklistItems}
           >
             Finalizar e ver resultado <ArrowRight className="h-4 w-4" />
           </Button>
