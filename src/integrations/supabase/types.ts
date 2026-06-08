@@ -70,6 +70,7 @@ export type Database = {
           ativo: boolean
           cnpj: string | null
           created_at: string
+          email: string | null
           id: string
           nome: string
           perfil: string
@@ -79,6 +80,7 @@ export type Database = {
           ativo?: boolean
           cnpj?: string | null
           created_at?: string
+          email?: string | null
           id: string
           nome: string
           perfil: string
@@ -88,6 +90,7 @@ export type Database = {
           ativo?: boolean
           cnpj?: string | null
           created_at?: string
+          email?: string | null
           id?: string
           nome?: string
           perfil?: string
