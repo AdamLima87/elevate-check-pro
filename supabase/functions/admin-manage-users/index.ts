@@ -49,7 +49,7 @@ serve(async (req) => {
         email,
         password,
         email_confirm: true,
-        user_metadata: { nome, perfil, cnpj }
+        user_metadata: { nome, perfil, cnpj, force_password_change: perfil === 'consultor' }
       })
 
       if (authError) throw authError
@@ -57,7 +57,7 @@ serve(async (req) => {
       // 2. Profile should be created by trigger, but we update it to be sure
       const { error: updateError } = await supabaseAdmin
         .from('profiles')
-        .update({ nome, email, perfil, cnpj: perfil === 'cliente' ? cnpj : null })
+        .update({ nome, email, perfil, cnpj: perfil === 'cliente' ? cnpj : null, force_password_change: perfil === 'consultor' })
         .eq('id', authUser.user.id)
 
       if (updateError) throw updateError

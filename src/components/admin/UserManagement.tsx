@@ -180,7 +180,7 @@ export function UserManagement() {
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="admin">Admin</SelectItem>
-                      <SelectItem value="consultor">Consultor</SelectItem>
+                      <SelectItem value="consultor">Consultor (senha obrigatória no 1º acesso)</SelectItem>
                       <SelectItem value="cliente">Cliente</SelectItem>
                     </SelectContent>
                   </Select>

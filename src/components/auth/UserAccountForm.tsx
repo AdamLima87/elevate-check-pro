@@ -22,13 +22,17 @@ const accountSchema = z.object({
   confirmPassword: z.string().optional().or(z.literal("")),
 }).refine((data) => {
   if (data.password && data.password.length > 0) {
-    return data.password === data.confirmPassword;
+    return data.password && data.confirmPassword && data.password === data.confirmPassword;
   }
   return true;
 }, {
   message: "As senhas não coincidem",
   path: ["confirmPassword"],
-});
+}).refine((data) => {
+  // If we want to make it required based on some external state, we'd need to pass a prop.
+  // For now, the existing logic is okay, but let's make sure password matches confirm if password is present.
+  return true;
+}, {});
 
 type AccountFormValues = z.infer<typeof accountSchema>;
 
@@ -67,6 +71,7 @@ export function UserAccountForm() {
       
       if (values.password && values.password.length > 0) {
         updates.password = values.password;
+        updates.data = { force_password_change: false }; // This will be handled by the update call below
       }
 
       if (Object.keys(updates).length === 0) {
@@ -77,6 +82,14 @@ export function UserAccountForm() {
       const { error } = await supabase.auth.updateUser(updates);
 
       if (error) throw error;
+
+      if (updates.password) {
+        // Update the profile to clear the force flag
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          await supabase.from("profiles").update({ force_password_change: false }).eq("id", user.id);
+        }
+      }
 
       if (updates.email) {
         toast.success("E-mail alterado! Verifique seu novo e-mail para confirmar a alteração.");

@@ -88,7 +88,7 @@ function LoginPage() {
       // Fetch profile to redirect correctly
       const { data: profile, error: profileError } = await supabase
         .from("profiles")
-        .select("perfil, ativo")
+        .select("perfil, ativo, force_password_change")
         .eq("id", data.user.id)
         .single();
 
@@ -99,7 +99,7 @@ function LoginPage() {
         await new Promise(resolve => setTimeout(resolve, 2000));
         const { data: retryProfile } = await supabase
           .from("profiles")
-          .select("perfil, ativo")
+          .select("perfil, ativo, force_password_change")
           .eq("id", data.user.id)
           .single();
         
@@ -145,10 +145,13 @@ function LoginPage() {
   };
 
   const redirectUser = (profile: any) => {
-    if (profile?.perfil === "admin") {
+    if (profile?.force_password_change) {
+      navigate({ to: "/perfil" });
+      toast.info("Por favor, altere sua senha para continuar.");
+    } else if (profile?.perfil === "admin") {
       navigate({ to: "/admin" });
-    } else if (profile?.perfil === "cliente") {
-      navigate({ to: "/meu-resultado" });
+    } else if (profile?.perfil === "cliente" || profile?.perfil === "consultor") {
+      navigate({ to: profile?.perfil === "cliente" ? "/meu-resultado" : "/" });
     } else {
       navigate({ to: "/login", search: { error: "insufficient_permissions" } });
     }

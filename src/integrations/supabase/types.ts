@@ -71,6 +71,7 @@ export type Database = {
           cnpj: string | null
           created_at: string
           email: string | null
+          force_password_change: boolean | null
           id: string
           nome: string
           perfil: string
@@ -81,6 +82,7 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          force_password_change?: boolean | null
           id: string
           nome: string
           perfil: string
@@ -91,6 +93,7 @@ export type Database = {
           cnpj?: string | null
           created_at?: string
           email?: string | null
+          force_password_change?: boolean | null
           id?: string
           nome?: string
           perfil?: string
