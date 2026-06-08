@@ -1,30 +1,30 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { AppShell } from "@/components/elevare/AppShell";
-import { ChangePasswordForm } from "@/components/auth/ChangePasswordForm";
+import { UserAccountForm } from "@/components/auth/UserAccountForm";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 
-export const Route = createFileRoute("/configuracoes")({
-  component: Configuracoes,
+export const Route = createFileRoute("/perfil")({
+  component: PerfilPage,
 });
 
-function Configuracoes() {
+function PerfilPage() {
   return (
     <AppShell>
       <div className="max-w-md mx-auto space-y-6">
         <div>
-          <h1 className="text-2xl font-bold">Configurações</h1>
-          <p className="text-muted-foreground">Gerencie sua conta e preferências.</p>
+          <h1 className="text-2xl font-bold">Meu Perfil</h1>
+          <p className="text-muted-foreground">Gerencie seus dados de acesso ao sistema.</p>
         </div>
 
         <Card>
           <CardHeader>
-            <CardTitle>Segurança</CardTitle>
+            <CardTitle>Dados da Conta</CardTitle>
             <CardDescription>
-              Mantenha sua conta segura alterando sua senha regularmente.
+              Atualize seu e-mail ou altere sua senha de acesso.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <ChangePasswordForm />
+            <UserAccountForm />
           </CardContent>
         </Card>
       </div>
