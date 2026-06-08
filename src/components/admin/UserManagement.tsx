@@ -72,41 +72,22 @@ export function UserManagement() {
     e.preventDefault();
     setSubmitting(true);
     try {
-      // In a real world app with Supabase Admin Auth, you'd use a dedicated Edge Function 
-      // or supabase.auth.admin.createUser if you have the service role key (not safe on client)
-      // Since this is a demo/limited environment, we'll suggest using a Cloud Function 
-      // but for now we'll simulate or use the public signUp if allowed.
-      // NOTE: supabase.auth.admin requires service_role which is NOT available in the browser.
-      
-      const { data, error } = await supabase.auth.signUp({
-        email: newUser.email,
-        password: newUser.password,
-        options: {
-          data: {
-            nome: newUser.nome,
-            perfil: newUser.perfil,
-            cnpj: newUser.cnpj,
-          }
+      const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+        body: {
+          action: "create",
+          userData: newUser
         }
       });
 
       if (error) throw error;
-
-      // After signUp, the trigger 'on_auth_user_created' in DB should create the profile.
-      // We might need to manually update it if the trigger doesn't have all data or to set correct profile
-      if (data.user) {
-         await supabase.from("profiles").update({
-            nome: newUser.nome,
-            perfil: newUser.perfil,
-            cnpj: newUser.perfil === 'cliente' ? newUser.cnpj : null
-         }).eq("id", data.user.id);
-      }
+      if (data.error) throw new Error(data.error);
 
       toast.success("Usuário criado com sucesso!");
       setOpen(false);
       fetchUsers();
       setNewUser({ nome: "", email: "", password: "", perfil: "consultor", cnpj: "" });
     } catch (error: any) {
+      console.error("Error creating user:", error);
       toast.error(error.message || "Erro ao criar usuário");
     } finally {
       setSubmitting(false);
