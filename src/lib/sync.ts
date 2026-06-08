@@ -22,7 +22,7 @@ export async function syncFromCloud() {
       numero: item.numero,
       status: item.status as any,
       estabelecimento: item.estabelecimento || "",
-      dataInicio: item.data_inicio,
+      dataInicio: item.data_inicio || new Date().toISOString(),
       dataConclusao: item.data_conclusao,
       progresso: Number(item.progresso),
       conformidade: item.conformidade ? Number(item.conformidade) : null,
@@ -30,13 +30,9 @@ export async function syncFromCloud() {
       respostas: item.respostas as any,
     }));
 
-    // Merge strategy: Cloud wins for shared IDs, keep local-only items
     const mergedMap = new Map<string, Inspecao>();
     
-    // Add local items first
     localList.forEach(item => mergedMap.set(item.id, item));
-    
-    // Overwrite with cloud items
     cloudList.forEach(item => mergedMap.set(item.id, item));
 
     const newList = Array.from(mergedMap.values()).sort((a, b) => 

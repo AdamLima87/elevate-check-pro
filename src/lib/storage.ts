@@ -67,7 +67,7 @@ export interface Inspecao {
   respostas: Record<string, Resposta>;
 }
 
-const HISTORICO_KEY = "elevare_inspecoes";
+export const HISTORICO_KEY = "elevare_inspecoes";
 const RASCUNHO_KEY = "elevare_rascunho"; 
 const NUMEROS_DISPONIVEIS_KEY = "elevare_numeros_disponiveis";
 const PROXIMO_NUMERO_KEY = "elevare_proximo_numero";
