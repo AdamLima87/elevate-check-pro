@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { createFileRoute, useNavigate, useSearch } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { AppShell } from "@/components/elevare/AppShell";
 import { Button } from "@/components/ui/button";
@@ -23,9 +23,10 @@ import {
   type Inspecao,
 } from "@/lib/storage";
 import { checklistSections } from "@/lib/checklist-data";
-import { FileDown, MessageCircle, Mail, Save, RotateCcw } from "lucide-react";
+import { FileDown, MessageCircle, Mail, Save, RotateCcw, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { gerarPDF } from "@/lib/pdf";
+import { supabase } from "@/integrations/supabase/client";
 
 export const Route = createFileRoute("/resultado")({
   head: () => ({
@@ -36,27 +37,69 @@ export const Route = createFileRoute("/resultado")({
 
 function ResultadoPage() {
   const navigate = useNavigate();
+  const search = useSearch({ from: "/resultado" }) as { id?: string; readonly?: boolean };
   const [insp, setInsp] = useState<Inspecao | null>(null);
+  const [loading, setLoading] = useState(false);
+
 
   useEffect(() => {
-    const r = loadRascunho();
-    if (!r || !r.dados.estabelecimento.razaoSocial) {
-      navigate({ to: "/" });
-      return;
+    async function loadData() {
+      if (search.readonly && search.id) {
+        setLoading(true);
+        try {
+          const { data, error } = await supabase
+            .from("inspecoes")
+            .select("*")
+            .eq("id", search.id)
+            .single();
+
+          if (error) throw error;
+          
+          if (data) {
+            const mapped: Inspecao = {
+              id: data.id,
+              numero: data.numero,
+              status: data.status as any,
+              estabelecimento: data.estabelecimento_nome || "",
+              dataInicio: data.data_inicio,
+              dataConclusao: data.data_conclusao,
+              progresso: data.progresso,
+              conformidade: data.conformidade ? Number(data.conformidade) : null,
+              dados: data.dados as any,
+              respostas: data.respostas as any,
+            };
+            setInsp(mapped);
+          }
+        } catch (err) {
+          toast.error("Erro ao carregar inspeção");
+        } finally {
+          setLoading(false);
+        }
+        return;
+      }
+
+      const r = loadRascunho();
+      if (!r || !r.dados.estabelecimento.razaoSocial) {
+        navigate({ to: "/" });
+        return;
+      }
+      
+      // Auto-save completion state when arriving at results page
+      const score = calcularPercentual(r.respostas);
+      const finalInsp: Inspecao = { 
+        ...r, 
+        status: "concluida", 
+        conformidade: score.percentual,
+        dataConclusao: new Date().toISOString()
+      };
+      
+      saveToHistorico(finalInsp);
+      setInsp(finalInsp);
     }
     
-    // Auto-save completion state when arriving at results page
-    const score = calcularPercentual(r.respostas);
-    const finalInsp: Inspecao = { 
-      ...r, 
-      status: "concluida", 
-      conformidade: score.percentual,
-      dataConclusao: new Date().toISOString()
-    };
-    
-    saveToHistorico(finalInsp);
-    setInsp(finalInsp);
-  }, [navigate]);
+    loadData();
+  }, [navigate, search.id, search.readonly]);
+
 
   const score = useMemo(() => (insp ? calcularPercentual(insp.respostas) : null), [insp]);
   const cls = score ? classificacao(score.percentual) : null;
@@ -84,7 +127,18 @@ function ResultadoPage() {
     return out;
   }, [insp]);
 
+  if (loading) {
+    return (
+      <AppShell>
+        <div className="flex justify-center py-20">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        </div>
+      </AppShell>
+    );
+  }
+
   if (!insp || !score || !cls) return null;
+
 
   const finalInsp = insp;
 
@@ -154,12 +208,21 @@ function ResultadoPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
-        <Button onClick={baixarPDF} className="gap-1.5"><FileDown className="h-4 w-4" /> PDF</Button>
-        <Button onClick={compartilharWhats} variant="secondary" className="gap-1.5"><MessageCircle className="h-4 w-4" /> WhatsApp</Button>
-        <Button onClick={enviarEmail} variant="secondary" className="gap-1.5"><Mail className="h-4 w-4" /> E-mail</Button>
-        <Button onClick={salvar} variant="outline" className="gap-1.5"><Save className="h-4 w-4" /> Salvar</Button>
-      </div>
+      {!search.readonly && (
+        <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-4">
+          <Button onClick={baixarPDF} className="gap-1.5"><FileDown className="h-4 w-4" /> PDF</Button>
+          <Button onClick={compartilharWhats} variant="secondary" className="gap-1.5"><MessageCircle className="h-4 w-4" /> WhatsApp</Button>
+          <Button onClick={enviarEmail} variant="secondary" className="gap-1.5"><Mail className="h-4 w-4" /> E-mail</Button>
+          <Button onClick={salvar} variant="outline" className="gap-1.5"><Save className="h-4 w-4" /> Salvar</Button>
+        </div>
+      )}
+      
+      {search.readonly && (
+        <div className="mt-4 flex gap-2">
+          <Button onClick={baixarPDF} className="gap-1.5"><FileDown className="h-4 w-4" /> Baixar PDF</Button>
+        </div>
+      )}
+
 
       <Card className="mt-4">
         <CardHeader>
@@ -200,10 +263,13 @@ function ResultadoPage() {
         </CardContent>
       </Card>
 
-      <div className="mt-6 flex flex-wrap justify-end gap-2">
-        <Button variant="ghost" onClick={() => navigate({ to: "/checklist" })}>Voltar ao checklist</Button>
-        <Button onClick={novaInspecao} className="gap-1.5"><RotateCcw className="h-4 w-4" /> Nova inspeção</Button>
-      </div>
+      {!search.readonly && (
+        <div className="mt-6 flex flex-wrap justify-end gap-2">
+          <Button variant="ghost" onClick={() => navigate({ to: "/checklist" })}>Voltar ao checklist</Button>
+          <Button onClick={novaInspecao} className="gap-1.5"><RotateCcw className="h-4 w-4" /> Nova inspeção</Button>
+        </div>
+      )}
+
     </AppShell>
   );
 }
