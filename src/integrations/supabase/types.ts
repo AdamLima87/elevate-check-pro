@@ -14,7 +14,51 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      inspecoes: {
+        Row: {
+          conformidade: number | null
+          dados: Json
+          data_conclusao: string | null
+          data_inicio: string | null
+          estabelecimento: string | null
+          id: string
+          numero: number
+          progresso: number | null
+          respostas: Json
+          status: string
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          conformidade?: number | null
+          dados?: Json
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          estabelecimento?: string | null
+          id: string
+          numero: number
+          progresso?: number | null
+          respostas?: Json
+          status: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          conformidade?: number | null
+          dados?: Json
+          data_conclusao?: string | null
+          data_inicio?: string | null
+          estabelecimento?: string | null
+          id?: string
+          numero?: number
+          progresso?: number | null
+          respostas?: Json
+          status?: string
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
