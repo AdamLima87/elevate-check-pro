@@ -98,7 +98,27 @@ function LoginPage() {
       redirectUser(profile);
       toast.success("Login realizado com sucesso!");
     } catch (error: any) {
-      toast.error(error.message || "Erro ao fazer login");
+      console.error("Erro no login:", error);
+      
+      let errorMessage = "Erro ao fazer login";
+      
+      if (error.message?.includes("Invalid login credentials") || error.status === 400) {
+        errorMessage = "E-mail ou senha incorretos. Verifique suas credenciais.";
+      } else if (error.message?.includes("Email not confirmed")) {
+        errorMessage = "E-mail não confirmado. Verifique sua caixa de entrada.";
+      } else if (error.message === "Sua conta está desativada.") {
+        errorMessage = "Sua conta está desativada. Entre em contato com o administrador.";
+      } else if (error.message === "Perfil não encontrado. Entre em contato com o suporte.") {
+        errorMessage = "Perfil não encontrado. Verifique se seu cadastro foi concluído.";
+      } else if (error.status === 429) {
+        errorMessage = "Muitas tentativas de login. Tente novamente mais tarde.";
+      } else if (error.message?.includes("Database error") || error.code === "PGRST301") {
+        errorMessage = "Erro de permissão no banco de dados. Contate o suporte técnico.";
+      } else {
+        errorMessage = error.message || "Ocorreu um erro inesperado ao tentar acessar o sistema.";
+      }
+      
+      toast.error(errorMessage);
     } finally {
       setLoading(false);
     }
