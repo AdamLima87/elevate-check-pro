@@ -10,13 +10,27 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResultadoRouteImport } from './routes/resultado'
+import { Route as MeuResultadoRouteImport } from './routes/meu-resultado'
+import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
 import { Route as ChecklistRouteImport } from './routes/checklist'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AcessoNegadoRouteImport } from './routes/acesso-negado'
 import { Route as IndexRouteImport } from './routes/index'
 
 const ResultadoRoute = ResultadoRouteImport.update({
   id: '/resultado',
   path: '/resultado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MeuResultadoRoute = MeuResultadoRouteImport.update({
+  id: '/meu-resultado',
+  path: '/meu-resultado',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LoginRoute = LoginRouteImport.update({
+  id: '/login',
+  path: '/login',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HistoricoRoute = HistoricoRouteImport.update({
@@ -29,6 +43,16 @@ const ChecklistRoute = ChecklistRouteImport.update({
   path: '/checklist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AcessoNegadoRoute = AcessoNegadoRouteImport.update({
+  id: '/acesso-negado',
+  path: '/acesso-negado',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
@@ -37,35 +61,76 @@ const IndexRoute = IndexRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
   '/checklist': typeof ChecklistRoute
   '/historico': typeof HistoricoRoute
+  '/login': typeof LoginRoute
+  '/meu-resultado': typeof MeuResultadoRoute
   '/resultado': typeof ResultadoRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
   '/checklist': typeof ChecklistRoute
   '/historico': typeof HistoricoRoute
+  '/login': typeof LoginRoute
+  '/meu-resultado': typeof MeuResultadoRoute
   '/resultado': typeof ResultadoRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acesso-negado': typeof AcessoNegadoRoute
+  '/admin': typeof AdminRoute
   '/checklist': typeof ChecklistRoute
   '/historico': typeof HistoricoRoute
+  '/login': typeof LoginRoute
+  '/meu-resultado': typeof MeuResultadoRoute
   '/resultado': typeof ResultadoRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/checklist' | '/historico' | '/resultado'
+  fullPaths:
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/checklist'
+    | '/historico'
+    | '/login'
+    | '/meu-resultado'
+    | '/resultado'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/checklist' | '/historico' | '/resultado'
-  id: '__root__' | '/' | '/checklist' | '/historico' | '/resultado'
+  to:
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/checklist'
+    | '/historico'
+    | '/login'
+    | '/meu-resultado'
+    | '/resultado'
+  id:
+    | '__root__'
+    | '/'
+    | '/acesso-negado'
+    | '/admin'
+    | '/checklist'
+    | '/historico'
+    | '/login'
+    | '/meu-resultado'
+    | '/resultado'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AcessoNegadoRoute: typeof AcessoNegadoRoute
+  AdminRoute: typeof AdminRoute
   ChecklistRoute: typeof ChecklistRoute
   HistoricoRoute: typeof HistoricoRoute
+  LoginRoute: typeof LoginRoute
+  MeuResultadoRoute: typeof MeuResultadoRoute
   ResultadoRoute: typeof ResultadoRoute
 }
 
@@ -76,6 +141,20 @@ declare module '@tanstack/react-router' {
       path: '/resultado'
       fullPath: '/resultado'
       preLoaderRoute: typeof ResultadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/meu-resultado': {
+      id: '/meu-resultado'
+      path: '/meu-resultado'
+      fullPath: '/meu-resultado'
+      preLoaderRoute: typeof MeuResultadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/login': {
+      id: '/login'
+      path: '/login'
+      fullPath: '/login'
+      preLoaderRoute: typeof LoginRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/historico': {
@@ -92,6 +171,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ChecklistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acesso-negado': {
+      id: '/acesso-negado'
+      path: '/acesso-negado'
+      fullPath: '/acesso-negado'
+      preLoaderRoute: typeof AcessoNegadoRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -104,10 +197,24 @@ declare module '@tanstack/react-router' {
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AcessoNegadoRoute: AcessoNegadoRoute,
+  AdminRoute: AdminRoute,
   ChecklistRoute: ChecklistRoute,
   HistoricoRoute: HistoricoRoute,
+  LoginRoute: LoginRoute,
+  MeuResultadoRoute: MeuResultadoRoute,
   ResultadoRoute: ResultadoRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
