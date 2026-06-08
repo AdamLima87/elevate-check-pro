@@ -76,8 +76,22 @@ function ChecklistPage() {
   const progresso = Math.round((respondidos / totalChecklistItems) * 100);
 
   const finalizar = () => {
-    if (respondidos === 0) {
-      toast.error("Responda pelo menos um item antes de finalizar.");
+    if (respondidos < totalChecklistItems) {
+      // Identificar itens faltantes
+      const faltantes: string[] = [];
+      checklistSections.forEach((sec) => {
+        sec.items.forEach((item) => {
+          if (insp.respostas?.[item.id] == null) {
+            faltantes.push(item.id);
+          }
+        });
+      });
+
+      if (faltantes.length > 0) {
+        toast.error(`Ainda faltam ${faltantes.length} itens: ${faltantes.join(", ")}`, {
+          duration: 5000,
+        });
+      }
       return;
     }
     navigate({ to: "/resultado" });
