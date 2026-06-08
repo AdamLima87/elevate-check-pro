@@ -35,15 +35,6 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [resetLoading, setResetLoading] = useState(false);
-  const [showRegister, setShowRegister] = useState(false);
-  const [isAdminExists, setIsAdminExists] = useState(true);
-
-  // Registration state for first admin
-  const [regData, setRegData] = useState({
-    nome: "",
-    email: "",
-    password: ""
-  });
 
   useEffect(() => {
     if (searchError) {
