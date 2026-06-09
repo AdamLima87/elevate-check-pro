@@ -153,21 +153,7 @@ async function getNextNumero(): Promise<number> {
 }
 
 export async function releaseNumero(numero: number) {
-  const { data } = await supabase
-    .from("numeracao_inspecoes" as any)
-    .select("numeros_disponiveis")
-    .eq("id", 1)
-    .single();
-
-  const disponiveis = (data as any)?.numeros_disponiveis || [];
-  
-  if (!disponiveis.includes(numero)) {
-    const novosDisponiveis = [...disponiveis, numero].sort((a: number, b: number) => a - b);
-    await supabase
-      .from("numeracao_inspecoes" as any)
-      .update({ numeros_disponiveis: novosDisponiveis })
-      .eq("id", 1);
-  }
+  // Logic removed to ensure numbers are never reused even after deletion
 }
 
 export function formatNumero(n: number) {
