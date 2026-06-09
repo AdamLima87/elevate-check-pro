@@ -188,6 +188,8 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
 }
 
 function ApendiceA({ insp, persist, totalItems, onComplete }: { insp: Inspecao; persist: (u: (i: Inspecao) => Inspecao) => void, totalItems: number, onComplete: () => void }) {
+  const respondidosCount = Object.values(insp.respostas || {}).filter((r) => r !== null && r !== undefined).length;
+
   const setResposta = (id: string, r: Resposta) => {
     persist((i) => ({ ...i, respostas: { ...(i.respostas || {}), [id]: r } }));
   };
@@ -307,14 +309,14 @@ function ApendiceA({ insp, persist, totalItems, onComplete }: { insp: Inspecao; 
       <div className="mt-8 flex justify-end">
         <Button 
           onClick={() => {
-            if (done < total) {
-               toast.error(`Ainda faltam itens no Apêndice A (${done}/${total})`);
+            if (respondidosCount < totalItems) {
+               toast.error(`Ainda faltam itens no Apêndice A (${respondidosCount}/${totalItems})`);
                return;
             }
             onComplete();
           }}
           className="gap-2"
-          variant={done < total ? "outline" : "default"}
+          variant={respondidosCount < totalItems ? "outline" : "default"}
         >
           Próximo: Apêndice B <ArrowRight className="h-4 w-4" />
         </Button>
