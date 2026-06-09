@@ -151,7 +151,7 @@ async function getNextNumero(): Promise<number> {
     return menor;
   }
 
-  const proximo = ultimo_numero + 1;
+  const proximo = (ultimo_numero || 0) + 1;
   await supabase
     .from("numeracao_inspecoes" as any)
     .update({ ultimo_numero: proximo })

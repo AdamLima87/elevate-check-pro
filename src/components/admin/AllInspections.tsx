@@ -60,7 +60,7 @@ export function AllInspections() {
         // Mas a regra de RLS no banco já deve cuidar disso se for o caso.
       }
 
-      const { data: inspData, error: inspError } = await query.order("data_inspecao", { ascending: false });
+      const { data: inspData, error: inspError } = await query.order("data_inicio", { ascending: false });
       if (inspError) throw inspError;
 
       // Fetch all consultant names for the filter and display
