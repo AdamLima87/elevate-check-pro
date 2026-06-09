@@ -168,12 +168,20 @@ function LoginPage() {
     if (profile?.force_password_change) {
       navigate({ to: "/perfil" });
       toast.info("Por favor, altere sua senha para continuar.");
-    } else if (profile?.perfil === "admin") {
-      navigate({ to: "/admin" });
-    } else if (profile?.perfil === "cliente" || profile?.perfil === "consultor") {
-      navigate({ to: profile?.perfil === "cliente" ? "/meu-resultado" : "/" });
     } else {
-      navigate({ to: "/login", search: { error: "insufficient_permissions" } });
+      // Update last access
+      await supabase
+        .from("profiles")
+        .update({ ultimo_acesso: new Date().toISOString() })
+        .eq("id", profile.id);
+
+      if (profile?.perfil === "admin") {
+        navigate({ to: "/admin" });
+      } else if (profile?.perfil === "cliente" || profile?.perfil === "consultor") {
+        navigate({ to: profile?.perfil === "cliente" ? "/meu-resultado" : "/" });
+      } else {
+        navigate({ to: "/login", search: { error: "insufficient_permissions" } });
+      }
     }
     toast.success("Login realizado com sucesso!");
   };
