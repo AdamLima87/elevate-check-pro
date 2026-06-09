@@ -371,14 +371,11 @@ export function calcularPercentual(respostas: Record<string, Resposta>): {
     });
   }
 
-  // O total deve ser sempre baseado em 112 itens para conformidade positiva absoluta,
-  // ou baseado nos itens totais do checklist se houver variação.
-  // totalChecklistItems é 112.
-  const TOTAL_ITEMS = 112; 
-  
-  const aplicavel = sim + nao + na;
-  // Conformidade positiva absoluta: (Sim / Total de Itens do Checklist)
-  const percentual = (sim / TOTAL_ITEMS) * 100;
+  // O total de itens do checklist é 112.
+  // A conformidade positiva é calculada em relação aos itens aplicáveis (S + N).
+  // Itens marcados como NA são removidos do denominador.
+  const aplicavel = sim + nao;
+  const percentual = aplicavel === 0 ? 0 : (sim / aplicavel) * 100;
   
   return { sim, nao, na, aplicavel, percentual };
 }

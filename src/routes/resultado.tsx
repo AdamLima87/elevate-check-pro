@@ -107,9 +107,10 @@ function ResultadoPage() {
     if (!insp) return [];
     return checklistSections.map((sec) => {
       const itens = sec.items.map((i) => insp.respostas[i.id]);
-      const s = itens.filter((r) => r === "S").length;
-      const totalDaSecao = sec.items.length;
-      const pct = totalDaSecao === 0 ? 0 : Math.round((s / totalDaSecao) * 100);
+      const itensAplicaveis = itens.filter((r) => r === "S" || r === "N");
+      const totalAplicaveis = itensAplicaveis.length;
+      const s = itensAplicaveis.filter((r) => r === "S").length;
+      const pct = totalAplicaveis === 0 ? 0 : Math.round((s / totalAplicaveis) * 100);
       return { secao: sec.title.split(",")[0].slice(0, 18), pct };
     });
   }, [insp]);
