@@ -196,7 +196,7 @@ function IndexPage() {
   };
 
   const iniciar = async () => {
-    const required: (keyof Estabelecimento)[] = ["razaoSocial", "nomeFantasia", "cnpj", "respLegalNome", "dataHora"];
+    const required: (keyof Estabelecimento)[] = ["razaoSocial", "nomeFantasia", "cnpj", "respLegalNome", "dataHora", "email"];
     const missing = required.filter((k) => !estab[k]);
     if (missing.length) {
       toast.error("Preencha os campos obrigatórios antes de iniciar.");
@@ -291,6 +291,7 @@ function IndexPage() {
           <Field label="Endereço" value={estab.endereco} onChange={(v) => update("endereco", v)} className="sm:col-span-2" />
           <Field label="Bairro" value={estab.bairro} onChange={(v) => update("bairro", v)} />
           <Field label="Data e Hora da inspeção *" type="datetime-local" value={estab.dataHora} onChange={(v) => update("dataHora", v)} />
+          <Field label="E-mail do Estabelecimento *" type="email" value={estab.email} onChange={(v) => update("email", v)} placeholder="contato@exemplo.com" />
         </CardContent>
       </Card>
 
