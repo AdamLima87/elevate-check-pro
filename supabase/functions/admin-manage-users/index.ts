@@ -17,11 +17,15 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
-    console.log('Request received:', req.method)
+    const body = await req.json()
+    console.log('Request received body:', body)
+    const { action, userData, queueId } = body
+
     const authHeader = req.headers.get('Authorization')
     let isAuthorized = false
 
-    if (authHeader) {
+    // Skip auth check for forgot_password
+    if (action !== 'forgot_password' && authHeader) {
       const token = authHeader.replace('Bearer ', '')
       const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
       
@@ -48,13 +52,9 @@ serve(async (req) => {
       } else {
         console.warn('No user found for token')
       }
-    } else {
-      console.warn('No Authorization header')
+    } else if (action !== 'forgot_password') {
+      console.warn('No Authorization header for protected action')
     }
-
-    const body = await req.json()
-    console.log('Request body:', body)
-    const { action, userData, queueId } = body
 
     // Internal system actions or admin actions
     if (action === 'create_client' || action === 'create') {
