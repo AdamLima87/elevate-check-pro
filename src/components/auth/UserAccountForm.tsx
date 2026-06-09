@@ -39,6 +39,7 @@ type AccountFormValues = z.infer<typeof accountSchema>;
 export function UserAccountForm() {
   const [isLoading, setIsLoading] = useState(false);
   const [initialEmail, setInitialEmail] = useState("");
+  const [mustChangePassword, setMustChangePassword] = useState(false);
 
   const form = useForm<AccountFormValues>({
     resolver: zodResolver(accountSchema),
@@ -52,9 +53,18 @@ export function UserAccountForm() {
   useEffect(() => {
     async function loadUser() {
       const { data: { user } } = await supabase.auth.getUser();
-      if (user?.email) {
-        setInitialEmail(user.email);
-        form.setValue("email", user.email);
+      if (user?.id) {
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("email, force_password_change")
+          .eq("id", user.id)
+          .single();
+        
+        if (profile) {
+          setInitialEmail(profile.email || user.email || "");
+          form.setValue("email", profile.email || user.email || "");
+          setMustChangePassword(!!profile.force_password_change);
+        }
       }
     }
     loadUser();
@@ -133,7 +143,7 @@ export function UserAccountForm() {
             <div className="pt-2 border-t mt-4">
               <div className="flex items-center gap-2 font-medium text-foreground mb-4">
                 <KeyRound className="h-4 w-4" />
-                <span>Alterar Senha (opcional)</span>
+                <span>{mustChangePassword ? "Definir Nova Senha (Obrigatório)" : "Alterar Senha (opcional)"}</span>
               </div>
               
               <div className="space-y-4">
@@ -144,7 +154,12 @@ export function UserAccountForm() {
                     <FormItem>
                       <FormLabel>Nova Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} placeholder="Deixe em branco para manter a atual" />
+                        <Input 
+                          type="password" 
+                          {...field} 
+                          placeholder={mustChangePassword ? "Digite sua nova senha" : "Deixe em branco para manter a atual"}
+                          required={mustChangePassword}
+                        />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -157,7 +172,7 @@ export function UserAccountForm() {
                     <FormItem>
                       <FormLabel>Confirmar Nova Senha</FormLabel>
                       <FormControl>
-                        <Input type="password" {...field} />
+                        <Input type="password" {...field} required={mustChangePassword} />
                       </FormControl>
                       <FormMessage />
                     </FormItem>
@@ -166,7 +181,7 @@ export function UserAccountForm() {
               </div>
             </div>
 
-            <Button type="submit" disabled={isLoading} className="w-full">
+            <Button type="submit" disabled={isLoading || (mustChangePassword && !form.watch("password"))} className="w-full">
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -33,11 +33,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className="min-h-screen bg-background flex flex-col">
       <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
         <div className="mx-auto flex max-w-5xl items-center justify-between px-4 py-3">
-          <Link to="/">
-            <Logo />
-          </Link>
+          <div className={profile?.force_password_change ? "pointer-events-none opacity-50" : ""}>
+            <Link to="/">
+              <Logo />
+            </Link>
+          </div>
           <nav className="flex items-center gap-1 text-sm">
-            {(profile?.perfil === "admin" || profile?.perfil === "consultor") && (
+            {(profile?.perfil === "admin" || profile?.perfil === "consultor") && !profile?.force_password_change && (
               <>
                 <Link
                   to="/"
@@ -76,7 +78,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                 <span className="hidden sm:inline">Admin</span>
               </Link>
             )}
-            {profile?.perfil === "cliente" && (
+            {profile?.perfil === "cliente" && !profile?.force_password_change && (
               <Link
                 to="/meu-resultado"
                 className="flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
@@ -88,7 +90,8 @@ export function AppShell({ children }: { children: ReactNode }) {
             )}
             <Link
               to="/perfil"
-              className="flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground"
+              disabled={profile?.force_password_change && window.location.pathname === "/perfil"}
+              className={`flex items-center gap-1.5 rounded-md px-3 py-2 text-muted-foreground hover:bg-accent hover:text-foreground ${profile?.force_password_change ? "ring-2 ring-primary ring-offset-2" : ""}`}
               activeProps={{ className: "flex items-center gap-1.5 rounded-md px-3 py-2 bg-accent text-foreground font-medium" }}
             >
               <User className="h-4 w-4" />
