@@ -368,7 +368,7 @@ export function calcularPercentual(respostas: Record<string, Resposta>): {
       else if (r === "NA") na++;
     });
   }
-  const aplicavel = sim + nao;
+  const aplicavel = sim + nao + na;
   const percentual = aplicavel === 0 ? 0 : (sim / aplicavel) * 100;
   return { sim, nao, na, aplicavel, percentual };
 }
