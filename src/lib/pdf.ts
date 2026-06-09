@@ -194,9 +194,9 @@ export async function gerarPDF(insp: Inspecao) {
   doc.setFont("helvetica", "bold");
   doc.text("OBSERVAÇÕES DO CONSULTOR", 40, 30);
   doc.setDrawColor(200);
-  doc.setLineDashPattern([2, 2]);
+  doc.setLineDashPattern([2, 2], 0);
   doc.rect(40, 40, pageWidth - 80, 100);
-  doc.setLineDashPattern([]);
+  doc.setLineDashPattern([], 0);
 
   const fY = 200;
   doc.setLineWidth(0.5);
