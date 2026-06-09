@@ -33,6 +33,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
   server: {
     handlers: {
       POST: async ({ request }) => {
+        console.log('Transactional email request received');
         const supabaseUrl = import.meta.env.VITE_SUPABASE_URL
         const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
 
