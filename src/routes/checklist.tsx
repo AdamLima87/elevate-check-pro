@@ -133,7 +133,13 @@ function ChecklistContent() {
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="a">Apêndice A — Verificação</TabsTrigger>
-            <TabsTrigger value="b">Apêndice B — Questionário</TabsTrigger>
+            <TabsTrigger 
+              value="b" 
+              disabled={respondidos < totalChecklistItems}
+              title={respondidos < totalChecklistItems ? "Complete todos os itens do Apêndice A primeiro" : ""}
+            >
+              Apêndice B — Questionário
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="a" className="mt-4">
@@ -296,18 +302,25 @@ function ApendiceA({ insp, persist, totalItems, onComplete }: { insp: Inspecao; 
                 </AccordionContent>
               </AccordionItem>
             );
-          })}
-        </Accordion>
-        <div className="mt-8 flex justify-end">
-          <Button 
-            onClick={onComplete}
-            className="gap-2"
-          >
-            Próximo: Apêndice B <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
-      </>
-    );
+        })}
+      </Accordion>
+      <div className="mt-8 flex justify-end">
+        <Button 
+          onClick={() => {
+            if (done < total) {
+               toast.error(`Ainda faltam itens no Apêndice A (${done}/${total})`);
+               return;
+            }
+            onComplete();
+          }}
+          className="gap-2"
+          variant={done < total ? "outline" : "default"}
+        >
+          Próximo: Apêndice B <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </>
+  );
   } catch (err) {
     console.error("Erro na renderização do Apêndice A:", err);
     return <div className="p-4 border rounded bg-destructive/10 text-destructive text-sm font-medium">Erro ao carregar lista de verificação (Apêndice A).</div>;
