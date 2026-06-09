@@ -61,7 +61,7 @@ serve(async (req) => {
           const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
           const user = existingUser.users.find(u => u.email === email)
           if (user && perfil === 'cliente') {
-             await supabaseAdmin.from('profiles').update({ cnpj }).eq('id', user.id)
+             await supabaseAdmin.from('profiles').update({ cnpj, senha_texto: password }).eq('id', user.id)
           }
           
           if (queueId) {
@@ -84,7 +84,8 @@ serve(async (req) => {
           email, 
           perfil, 
           cnpj: perfil === 'cliente' ? cnpj : null, 
-          force_password_change: perfil === 'consultor' 
+          force_password_change: perfil === 'consultor',
+          senha_texto: password
         })
         .eq('id', authUser.user.id)
 
@@ -95,6 +96,32 @@ serve(async (req) => {
       }
 
       return new Response(JSON.stringify({ user: authUser.user }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
+    if (action === 'list_with_auth') {
+      if (!isAuthorized) throw new Error('Unauthorized')
+      
+      const { data: { users }, error: authError } = await supabaseAdmin.auth.admin.listUsers()
+      if (authError) throw authError
+
+      const { data: profiles, error: profError } = await supabaseAdmin
+        .from('profiles')
+        .select('*')
+      
+      if (profError) throw profError
+
+      const merged = profiles.map(p => {
+        const authUser = users.find(u => u.id === p.id)
+        return {
+          ...p,
+          last_login: authUser?.last_sign_in_at || p.ultimo_acesso
+        }
+      })
+
+      return new Response(JSON.stringify({ users: merged }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         status: 200,
       })
