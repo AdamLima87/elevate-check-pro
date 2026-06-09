@@ -178,7 +178,7 @@ function ResultadoPage() {
         }
       }
       
-      toast.success("Inspeção concluída e salva no histórico.");
+      
     } catch (err) {
       console.error("Erro ao salvar:", err);
       toast.error("Erro ao salvar inspeção.");
