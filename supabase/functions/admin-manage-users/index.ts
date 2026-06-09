@@ -160,7 +160,7 @@ serve(async (req) => {
           const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
           const user = existingUser.users.find(u => u.email === email)
           if (user && perfil === 'cliente') {
-             await supabaseAdmin.from('profiles').update({ cnpj, senha_texto: password }).eq('id', user.id)
+             await supabaseAdmin.from('profiles').update({ cnpj }).eq('id', user.id)
           }
           
           if (queueId) {
@@ -183,8 +183,7 @@ serve(async (req) => {
           email, 
           perfil, 
           cnpj: perfil === 'cliente' ? cnpj : null, 
-          force_password_change: perfil === 'consultor',
-          senha_texto: password
+          force_password_change: perfil === 'consultor'
         })
         .eq('id', authUser.user.id)
 
@@ -230,8 +229,7 @@ serve(async (req) => {
       if (!isAuthorized) throw new Error('Unauthorized')
       const { userId } = userData
       
-      // Generate a random temporary password (8 characters)
-      const tempPassword = Math.random().toString(36).slice(-8)
+      const tempPassword = generateTemporaryPassword()
       
       console.log(`Resetting password for user ${userId}`)
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
