@@ -68,23 +68,31 @@ function ChecklistContent() {
 
   if (!insp) return null;
 
-  const persist = (updater: (i: Inspecao) => Inspecao) => {
+  const persist = async (updater: (i: Inspecao) => Inspecao) => {
     try {
+      let nextInsp: Inspecao | null = null;
+      
       setInsp((cur) => {
         if (!cur) return cur;
         const next = updater(cur);
         const totalAnswers = Object.keys(next.respostas || {}).length;
         next.progresso = Math.round((totalAnswers / totalChecklistItems) * 100);
         
-        // If status was already "concluida", change it back to "em_andamento" on any modification
+        // CRITICAL: Any change forces status back to "em_andamento"
         if (next.status === "concluida") {
+          console.log("Modification detected: changing status to em_andamento");
           next.status = "em_andamento";
         }
         
-        saveRascunho(next);
-        saveToHistorico(next);
+        nextInsp = next;
         return next;
       });
+
+      // Persist after state update is defined
+      if (nextInsp) {
+        await saveRascunho(nextInsp);
+        await saveToHistorico(nextInsp);
+      }
     } catch (error) {
       console.error("Erro ao persistir dados:", error);
       toast.error("Erro ao salvar dados.");
