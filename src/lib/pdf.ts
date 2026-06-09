@@ -21,7 +21,7 @@ export async function gerarPDF(insp: Inspecao) {
   const addLayoutElements = (pageDoc: jsPDF, pageIndex: number, totalPages: number) => {
     pageDoc.setPage(pageIndex);
     
-    // 1.1 Faixa colorida no topo (8px)
+    // 1.1 Faixa colorida no topo (8px) - #1a4d2e
     pageDoc.setFillColor(26, 77, 46);
     pageDoc.rect(0, 0, pageWidth, 8, "F");
 
@@ -37,8 +37,8 @@ export async function gerarPDF(insp: Inspecao) {
     pageDoc.text(`Página ${pageIndex} de ${totalPages}`, pageWidth - 20, pageHeight - 25, { align: "right" });
   };
 
-  // Carregar Logo (URL direta do projeto)
-  const logoUrl = "https://www.elevareconsultoria.com/assets/logo-BuPDZoNv.png";
+  // Carregar Logo (URL direta solicitada)
+  const logoUrl = "https://elevate-check-pro.lovable.app/__l5e/assets-v1/1f90790f-e01b-48e0-8e59-4578c2d4a2f1/elevare-logo.png";
   let logoData = "";
   try {
     const response = await fetch(logoUrl);
@@ -53,9 +53,11 @@ export async function gerarPDF(insp: Inspecao) {
   }
 
   // 1. Cabeçalho
-  let y = 50;
+  let y = 60;
   if (logoData) {
-    doc.addImage(logoData, "PNG", 20, 20, 100, 40, undefined, 'FAST');
+    // Logo com 50px de altura (approx 37.5pt)
+    // Mantendo proporção. Se 100/40 era original, 50 altura => 125 largura
+    doc.addImage(logoData, "PNG", 20, 20, 125, 37.5, undefined, 'FAST');
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
@@ -68,7 +70,7 @@ export async function gerarPDF(insp: Inspecao) {
   doc.setTextColor(50, 50, 50);
   doc.text("Relatório de Inspeção", pageWidth - 20, 45, { align: "right" });
   
-  y = 80;
+  y = 90;
 
   // 1.3 Dados do Estabelecimento em 2 colunas
   const e = insp.dados.estabelecimento;

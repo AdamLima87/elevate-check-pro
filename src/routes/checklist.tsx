@@ -156,15 +156,17 @@ function ChecklistContent() {
           </TabsContent>
         </Tabs>
 
-        <div className="mt-6 flex justify-end">
-          <Button 
-            size="lg" 
-            onClick={finalizar} 
-            className="gap-2"
-          >
-            Finalizar e ver resultado <ArrowRight className="h-4 w-4" />
-          </Button>
-        </div>
+        {activeTab === "b" && (
+          <div className="mt-6 flex justify-end">
+            <Button 
+              size="lg" 
+              onClick={finalizar} 
+              className="gap-2"
+            >
+              Finalizar e ver resultado <ArrowRight className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
       </AppShell>
     );
   } catch (renderError) {
