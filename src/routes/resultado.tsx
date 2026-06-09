@@ -158,8 +158,13 @@ function ResultadoPage() {
       
       if (email) {
         try {
-          const { error: fnError } = await supabase.functions.invoke("transactional-email", {
-            body: {
+          const response = await fetch('/lovable/email/transactional/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+            },
+            body: JSON.stringify({
               templateName: "inspection",
               recipientEmail: email,
               templateData: {
@@ -172,10 +177,10 @@ function ResultadoPage() {
                 classificacaoTone: cls.tone,
                 link_resultado: `${window.location.origin}/meu-resultado`
               }
-            }
+            })
           });
           
-          if (fnError) throw fnError;
+          if (!response.ok) throw new Error('Falha ao enviar e-mail');
           toast.success(`Relatório enviado por e-mail para ${email}`);
         } catch (emailErr) {
           console.error("Erro ao enviar e-mail:", emailErr);

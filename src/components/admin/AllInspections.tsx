@@ -138,8 +138,13 @@ export function AllInspections() {
         tone: conf >= 76 ? "success" : conf >= 51 ? "warning" : "destructive"
       };
 
-      const { error } = await supabase.functions.invoke("transactional-email", {
-        body: {
+      const response = await fetch('/lovable/email/transactional/send', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+        },
+        body: JSON.stringify({
           templateName: "inspection",
           recipientEmail: email,
           templateData: {
@@ -152,10 +157,10 @@ export function AllInspections() {
             classificacaoTone: cls.tone,
             link_resultado: `${window.location.origin}/meu-resultado`
           }
-        }
+        })
       });
 
-      if (error) throw error;
+      if (!response.ok) throw new Error('Falha ao reenviar e-mail');
       toast.success(`Relatório reenviado para ${email}`);
     } catch (error) {
       console.error("Error resending email:", error);
