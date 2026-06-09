@@ -15,12 +15,14 @@ export async function gerarPDF(insp: Inspecao) {
   const colorGrey = [245, 245, 245]; // #f5f5f5
   const colorRedBg = [252, 235, 235]; // #FCEBEB
   const colorRedText = [163, 45, 45]; // #A32D2D
+  const colorYellowBg = [254, 252, 232];
+  const colorGreenBg = [234, 243, 222];
 
-  // Adiciona rodapé e barra de topo em todas as páginas (será feito ao final com um loop)
+  // Layout de página (cabeçalho + rodapé)
   const addLayoutElements = (pageDoc: jsPDF, pageIndex: number, totalPages: number) => {
     pageDoc.setPage(pageIndex);
     
-    // Faixa colorida no topo (8px)
+    // Faixa colorida no topo
     pageDoc.setFillColor(26, 77, 46);
     pageDoc.rect(0, 0, pageWidth, 8, "F");
 
@@ -36,46 +38,19 @@ export async function gerarPDF(insp: Inspecao) {
     pageDoc.text(`Página ${pageIndex} de ${totalPages}`, pageWidth - 40, pageHeight - 25, { align: "right" });
   };
 
-  // Carregar Logo
-  const logoUrl = "https://www.elevareconsultoria.com/assets/logo-BuPDZoNv.png";
-  let logoData = "";
-  try {
-    const response = await fetch(logoUrl);
-    const blob = await response.blob();
-    logoData = await new Promise((resolve) => {
-      const reader = new FileReader();
-      reader.onloadend = () => resolve(reader.result as string);
-      reader.readAsDataURL(blob);
-    });
-  } catch (error) {
-    console.warn("Não foi possível carregar o logo para o PDF", error);
-  }
-
-  // Header Content
-  let y = 45;
-  if (logoData) {
-    doc.addImage(logoData, "PNG", 40, 20, 100, 40, undefined, 'FAST');
-  } else {
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(18);
-    doc.setTextColor(26, 77, 46);
-    doc.text("ELEVARE", 40, 45);
-  }
-
+  // Cabeçalho Principal (apenas primeira página)
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(50, 50, 50);
   doc.text("Relatório de Inspeção", pageWidth - 40, 45, { align: "right" });
   
-  y = 85;
-
   // Dados do Estabelecimento
   const e = insp.dados.estabelecimento;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(26, 77, 46);
-  doc.text("DADOS DO ESTABELECIMENTO", 40, y);
-  y += 15;
+  doc.text("DADOS DO ESTABELECIMENTO", 40, 70);
+  doc.line(40, 75, pageWidth - 40, 75);
 
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
@@ -94,61 +69,59 @@ export async function gerarPDF(insp: Inspecao) {
     `Data da Inspeção: ${e.dataHora ? new Date(e.dataHora).toLocaleDateString("pt-BR") : "-"}`,
   ];
 
-  let tempY = y;
-  leftCol.forEach(line => {
-    doc.text(line, 40, tempY);
-    tempY += 13;
-  });
-  tempY = y;
-  rightCol.forEach(line => {
-    doc.text(line, pageWidth / 2, tempY);
-    tempY += 13;
-  });
-  y = Math.max(y + (leftCol.length * 13), tempY) + 20;
-
-  // Bloco de Resumo Visual
-  doc.setFillColor(248, 249, 250);
-  doc.roundedRect(40, y, pageWidth - 80, 85, 4, 4, "F");
+  let y = 90;
+  leftCol.forEach((line, i) => { doc.text(line, 40, y + (i * 15)); });
+  rightCol.forEach((line, i) => { doc.text(line, pageWidth / 2, y + (i * 15)); });
   
-  // Percentual Grande
+  y += (leftCol.length * 15) + 20;
+
+  // Bloco de Resumo
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(26, 77, 46);
+  doc.text("RESUMO DA AVALIAÇÃO", 40, y);
+  y += 15;
+
+  // Cards de Métricas
+  const cardW = (pageWidth - 100) / 3;
+  const drawCard = (x: number, title: string, value: number, bgColor: number[]) => {
+    doc.setFillColor(bgColor[0], bgColor[1], bgColor[2]);
+    doc.roundedRect(x, y, cardW, 40, 3, 3, "F");
+    doc.setFont("helvetica", "normal");
+    doc.setFontSize(8);
+    doc.setTextColor(80, 80, 80);
+    doc.text(title, x + cardW/2, y + 15, { align: "center" });
+    doc.setFont("helvetica", "bold");
+    doc.setFontSize(14);
+    doc.setTextColor(26, 77, 46);
+    doc.text(String(value), x + cardW/2, y + 32, { align: "center" });
+  };
+  drawCard(40, "CONFORMES", score.sim, [234, 243, 222]);
+  drawCard(40 + cardW + 10, "NÃO CONFORMES", score.nao, [252, 235, 235]);
+  drawCard(40 + (cardW + 10) * 2, "N/A", score.na, [245, 245, 245]);
+
+  y += 55;
+  
+  // Percentual
   doc.setFontSize(32);
   doc.setTextColor(26, 77, 46);
-  doc.text(`${score.percentual.toFixed(1)}%`, 60, y + 45);
+  doc.text(`${score.percentual.toFixed(1)}%`, 40, y + 15);
   
-  // Badge de Classificação
-  const tone = cls.tone === "success" ? [26, 77, 46] : cls.tone === "warning" ? [234, 179, 8] : [185, 28, 28];
-  doc.setFillColor(tone[0], tone[1], tone[2]);
-  doc.roundedRect(60, y + 55, 80, 18, 2, 2, "F");
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text(cls.label, 100, y + 67, { align: "center" });
-
-  // Métricas Lado a Lado
+  const badgeColor = cls.tone === "success" ? [26, 77, 46] : cls.tone === "warning" ? [234, 179, 8] : [185, 28, 28];
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(120, y - 5, 80, 20, 3, 3, "F");
   doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.setFont("helvetica", "bold");
-  doc.text("Conformes", 200, y + 30);
-  doc.text("Não conformes", 300, y + 30);
-  doc.text("NA", 420, y + 30);
+  doc.setTextColor(255, 255, 255);
+  doc.text(cls.label, 160, y + 8, { align: "center" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(14);
-  doc.setTextColor(26, 77, 46);
-  doc.text(String(score.sim), 200, y + 50);
-  doc.setTextColor(185, 28, 28);
-  doc.text(String(score.nao), 300, y + 50);
-  doc.setTextColor(120, 120, 120);
-  doc.text(String(score.na), 420, y + 50);
-
-  // Barra de Progresso
-  const barWidth = pageWidth - 120;
+  // Barra de progresso geral
+  const barW = pageWidth - 80;
   doc.setFillColor(220, 220, 220);
-  doc.roundedRect(60, y + 75, barWidth, 4, 2, 2, "F");
-  doc.setFillColor(tone[0], tone[1], tone[2]);
-  doc.roundedRect(60, y + 75, (barWidth * score.percentual) / 100, 4, 2, 2, "F");
+  doc.rect(40, y + 30, barW, 6, "F");
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.rect(40, y + 30, (barW * score.percentual) / 100, 6, "F");
 
-  y += 110;
+  y += 60;
 
   // Tabela de Seções
   const sectionRows = checklistSections.map((sec) => {
@@ -159,7 +132,6 @@ export async function gerarPDF(insp: Inspecao) {
     const aplic = s + n;
     const val = aplic === 0 ? 0 : (s / aplic) * 100;
     const pct = aplic === 0 ? "-" : `${val.toFixed(0)}%`;
-    
     return [sec.title, String(s), String(n), String(na), pct, ""];
   });
 
@@ -167,147 +139,78 @@ export async function gerarPDF(insp: Inspecao) {
     startY: y,
     head: [["Seção", "S", "N", "NA", "%", "Progresso"]],
     body: sectionRows,
-    headStyles: { fillColor: [26, 77, 46], textColor: 255, fontStyle: 'bold' },
+    headStyles: { fillColor: [26, 77, 46], textColor: 255, fontStyle: 'bold', fontSize: 9 },
     alternateRowStyles: { fillColor: [245, 245, 245] },
-    styles: { fontSize: 8, cellPadding: 5, valign: 'middle' },
-    columnStyles: {
-      4: { fontStyle: 'bold', halign: 'center' },
-      5: { cellWidth: 80 }
-    },
+    styles: { fontSize: 8, cellPadding: 6 },
+    columnStyles: { 4: { fontStyle: 'bold', halign: 'center' }, 5: { cellWidth: 100 } },
     didDrawCell: (data) => {
-      if (data.section === 'body' && data.column.index === 4) {
-        const valStr = data.cell.raw as string;
-        if (valStr !== "-") {
-          const val = parseInt(valStr);
-          if (val >= 76) doc.setTextColor(26, 77, 46);
-          else if (val >= 51) doc.setTextColor(180, 140, 0);
-          else doc.setTextColor(185, 28, 28);
+        if (data.section === 'body' && data.column.index === 4) {
+            const valStr = data.cell.raw as string;
+            if (valStr !== "-") {
+                const val = parseInt(valStr);
+                if (val >= 76) doc.setTextColor(26, 77, 46);
+                else if (val >= 51) doc.setTextColor(180, 140, 0);
+                else doc.setTextColor(185, 28, 28);
+            }
         }
-      }
-      if (data.section === 'body' && data.column.index === 5) {
-        const valStr = data.row.cells[4].raw as string;
-        if (valStr !== "-") {
-          const val = parseInt(valStr);
-          const barX = data.cell.x + 5;
-          const barY = data.cell.y + (data.cell.height / 2) - 2;
-          const fullW = data.cell.width - 10;
-          
-          doc.setFillColor(230, 230, 230);
-          doc.rect(barX, barY, fullW, 4, "F");
-          
-          let bColor = [185, 28, 28];
-          if (val >= 76) bColor = [26, 77, 46];
-          else if (val >= 51) bColor = [234, 179, 8];
-          
-          doc.setFillColor(bColor[0], bColor[1], bColor[2]);
-          doc.rect(barX, barY, (fullW * val) / 100, 4, "F");
+        if (data.section === 'body' && data.column.index === 5) {
+            const valStr = data.row.cells[4].raw as string;
+            if (valStr !== "-") {
+                const val = parseInt(valStr);
+                const bX = data.cell.x + 5, bY = data.cell.y + (data.cell.height / 2) - 2;
+                doc.setFillColor(230, 230, 230);
+                doc.rect(bX, bY, data.cell.width - 10, 4, "F");
+                let bColor = val >= 76 ? [26, 77, 46] : val >= 51 ? [234, 179, 8] : [185, 28, 28];
+                doc.setFillColor(bColor[0], bColor[1], bColor[2]);
+                doc.rect(bX, bY, ((data.cell.width - 10) * val) / 100, 4, "F");
+            }
         }
-      }
-    },
-    margin: { left: 40, right: 40 },
+    }
   });
 
-  // Não conformidades
-  const ncRows: string[][] = [];
-  checklistSections.forEach((sec) => {
-    sec.items.forEach((it) => {
-      if (insp.respostas[it.id] === "N") ncRows.push([it.id, sec.title, it.text]);
-    });
-  });
+  // Tabela de NCs
+  const ncRows = checklistSections.flatMap((sec) => 
+    sec.items.filter((it) => insp.respostas[it.id] === "N").map((it) => [it.id, sec.title, it.text])
+  );
 
   if (ncRows.length) {
-    const lastY = (doc as any).lastAutoTable?.finalY ?? y;
+    doc.addPage();
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(26, 77, 46);
-    doc.text("NÃO CONFORMIDADES IDENTIFICADAS", 40, lastY + 25);
-
+    doc.text("NÃO CONFORMIDADES", 40, 30);
     autoTable(doc, {
-      startY: lastY + 35,
-      head: [["Item", "Seção", "Descrição da Não Conformidade"]],
+      startY: 40,
+      head: [["Item", "Seção", "Descrição"]],
       body: ncRows,
       headStyles: { fillColor: [26, 77, 46], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      styles: { fontSize: 8, cellPadding: 8, overflow: 'ellipsize', cellWidth: 'auto' },
-      columnStyles: { 
-        0: { fillColor: [252, 235, 235], textColor: [163, 45, 45], fontStyle: 'bold', cellWidth: 35, halign: 'center' }, 
-        1: { cellWidth: 100 },
-        2: { cellWidth: 'auto' }
-      },
-      margin: { left: 40, right: 40 },
-      didParseCell: (data) => {
-        if (data.column.index === 2 && data.section === 'body') {
-          // Garante que o texto quebra corretamente e não ultrapassa muito o espaço
-          // @ts-ignore - maxLines exist em run-time para overflow: ellipsize mas não no tipo Styles
-          data.cell.styles.maxLines = 2;
-        }
-      }
+      columnStyles: { 0: { fillColor: [252, 235, 235], textColor: [163, 45, 45], fontStyle: 'bold', halign: 'center' } }
     });
   }
 
-  // Observações e Assinatura
-  let finalY = (doc as any).lastAutoTable?.finalY + 40;
-  if (finalY > pageHeight - 150) {
-    doc.addPage();
-    finalY = 50;
-  }
-
-  // Observações
+  // Observações e Assinatura (última página)
+  doc.addPage();
   doc.setFont("helvetica", "bold");
-  doc.setFontSize(10);
-  doc.setTextColor(26, 77, 46);
-  doc.text("OBSERVAÇÕES DO CONSULTOR", 40, finalY);
-  finalY += 15;
-  
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(60, 60, 60);
-  
-  // Como não temos um campo específico "observações" na interface Inspecao ainda, 
-  // simulamos a lógica pedida. Se existir no futuro, será puxado daqui.
-  const obs = (insp as any).observacoes || "";
-  if (obs) {
-    const splitObs = doc.splitTextToSize(obs, pageWidth - 80);
-    doc.text(splitObs, 40, finalY);
-    finalY += (splitObs.length * 12) + 40;
-  } else {
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineDashPattern([2, 2], 0);
-    doc.line(40, finalY + 10, pageWidth - 40, finalY + 10);
-    doc.setLineDashPattern([], 0);
-    finalY += 60;
-  }
+  doc.text("OBSERVAÇÕES DO CONSULTOR", 40, 30);
+  doc.setDrawColor(200);
+  doc.setLineDashPattern([2, 2]);
+  doc.rect(40, 40, pageWidth - 80, 100);
+  doc.setLineDashPattern([]);
 
-  if (finalY > pageHeight - 120) {
-    doc.addPage();
-    finalY = 80;
-  }
-
-  // Assinatura
-  doc.setDrawColor(0);
+  const fY = 200;
   doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - 100, finalY + 40, pageWidth / 2 + 100, finalY + 40);
+  doc.line(40, fY, 250, fY);
+  doc.text("Assinatura do Consultor", 40, fY + 15);
+  doc.line(350, fY, pageWidth - 40, fY);
+  doc.text("Carimbo", 350, fY + 15);
   
-  doc.setFontSize(9);
-  doc.text("Assinatura do Responsável Técnico", pageWidth / 2, finalY + 55, { align: "center" });
-  
-  doc.setFont("helvetica", "bold");
-  const techName = e.respTecNome || "__________________________";
-  const techReg = e.respTecConselho && e.respTecRegistro ? `${e.respTecConselho} ${e.respTecRegistro}` : "Conselho/Registro";
-  doc.text(techName, pageWidth / 2, finalY + 70, { align: "center" });
   doc.setFont("helvetica", "normal");
-  doc.text(techReg, pageWidth / 2, finalY + 82, { align: "center" });
+  doc.text(`${e.respTecNome || ""}`, 40, fY + 30);
+  doc.text(`${new Date().toLocaleDateString("pt-BR")}`, pageWidth - 40, fY + 30, { align: "right" });
 
-  const dateStr = e.dataHora ? new Date(e.dataHora).toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR");
-  doc.text(`Data: ${dateStr}`, pageWidth / 2, finalY + 98, { align: "center" });
-
-  // Finalização: Adiciona layout em todas as páginas
   const totalPages = doc.getNumberOfPages();
-  for (let i = 1; i <= totalPages; i++) {
-    addLayoutElements(doc, i, totalPages);
-  }
+  for (let i = 1; i <= totalPages; i++) addLayoutElements(doc, i, totalPages);
 
-  const filename = `Relatorio_Elevare_${(insp.estabelecimento || "inspecao").replace(/\s+/g, "_")}.pdf`;
-  doc.save(filename);
+  doc.save(`Relatorio_Elevare_${insp.estabelecimento.replace(/\s+/g, "_")}.pdf`);
 }
-
