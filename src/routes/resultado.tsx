@@ -84,16 +84,17 @@ function ResultadoPage() {
         return;
       }
       
-      // Set status to in_progress when arriving at results if it's the first time
+      // Always preserve the current status when loading the results page
       // The "concluida" status will only be set when the user clicks "Salvar"
       const score = calcularPercentual(r.respostas);
       const finalInsp: Inspecao = { 
         ...r, 
-        status: r.status === "concluida" ? "concluida" : "em_andamento", 
+        status: r.status, 
         conformidade: score.percentual,
         dataConclusao: r.dataConclusao || new Date().toISOString()
       };
       
+      // Update local storage and state without forcing status change
       saveToHistorico(finalInsp);
       setInsp(finalInsp);
     }
@@ -143,12 +144,14 @@ function ResultadoPage() {
 
   const finalInsp = insp;
 
-  const salvar = () => {
+  const salvar = async () => {
     const updatedInsp: Inspecao = {
       ...finalInsp,
       status: "concluida"
     };
-    saveToHistorico(updatedInsp);
+    
+    // Explicitly update status in both historical record and current state
+    await saveToHistorico(updatedInsp);
     setInsp(updatedInsp);
     toast.success("Inspeção concluída e salva no histórico.");
   };
