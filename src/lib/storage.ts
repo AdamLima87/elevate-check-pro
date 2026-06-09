@@ -361,6 +361,8 @@ export function calcularPercentual(respostas: Record<string, Resposta>): {
   percentual: number;
 } {
   let sim = 0, nao = 0, na = 0;
+  
+  // Contabilizar as respostas presentes
   if (respostas) {
     Object.values(respostas).forEach((r) => {
       if (r === "S") sim++;
@@ -368,8 +370,16 @@ export function calcularPercentual(respostas: Record<string, Resposta>): {
       else if (r === "NA") na++;
     });
   }
+
+  // O total deve ser sempre baseado em 112 itens para conformidade positiva absoluta,
+  // ou baseado nos itens totais do checklist se houver variação.
+  // totalChecklistItems é 112.
+  const TOTAL_ITEMS = 112; 
+  
   const aplicavel = sim + nao + na;
-  const percentual = aplicavel === 0 ? 0 : (sim / aplicavel) * 100;
+  // Conformidade positiva absoluta: (Sim / Total de Itens do Checklist)
+  const percentual = (sim / TOTAL_ITEMS) * 100;
+  
   return { sim, nao, na, aplicavel, percentual };
 }
 
