@@ -144,12 +144,14 @@ function ResultadoPage() {
 
   const finalInsp = insp;
 
-  const salvar = () => {
+  const salvar = async () => {
     const updatedInsp: Inspecao = {
       ...finalInsp,
       status: "concluida"
     };
-    saveToHistorico(updatedInsp);
+    
+    // Explicitly update status in both historical record and current state
+    await saveToHistorico(updatedInsp);
     setInsp(updatedInsp);
     toast.success("Inspeção concluída e salva no histórico.");
   };
