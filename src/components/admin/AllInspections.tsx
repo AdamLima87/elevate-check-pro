@@ -18,10 +18,22 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Loader2, Search, FileText } from "lucide-react";
-import { classificacao } from "@/lib/storage";
+import { Loader2, Search, FileText, Trash2 } from "lucide-react";
+import { classificacao, deleteFromHistorico } from "@/lib/storage";
 import { cn } from "@/lib/utils";
 import { useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 export function AllInspections() {
   const [inspections, setInspections] = useState<any[]>([]);
@@ -93,6 +105,17 @@ export function AllInspections() {
       insp.numero?.toString().includes(searchLower)
     );
   });
+
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteFromHistorico(id);
+      setInspections(prev => prev.filter(i => i.id !== id));
+      toast.success("Inspeção excluída com sucesso");
+    } catch (error) {
+      console.error("Error deleting inspection:", error);
+      toast.error("Erro ao excluir inspeção");
+    }
+  };
 
   return (
     <div className="space-y-6">
@@ -204,13 +227,40 @@ export function AllInspections() {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            onClick={() => navigate({ to: "/resultado", search: { id: insp.id, readonly: true } })}
-                          >
-                            <FileText className="h-4 w-4 mr-2" /> Ver
-                          </Button>
+                          <div className="flex justify-end gap-2">
+                            <Button 
+                              variant="ghost" 
+                              size="sm" 
+                              onClick={() => navigate({ to: "/resultado", search: { id: insp.id, readonly: true } })}
+                            >
+                              <FileText className="h-4 w-4 mr-2" /> Ver
+                            </Button>
+
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="sm" className="text-destructive hover:text-destructive hover:bg-destructive/10">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Excluir Inspeção?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Esta ação não pode ser desfeita. Isso excluirá permanentemente os dados da inspeção.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancelar</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleDelete(insp.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Excluir
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </div>
                         </TableCell>
                       </TableRow>
                     );
