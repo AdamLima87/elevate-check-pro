@@ -189,7 +189,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
               to: effectiveRecipient,
               from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
               sender_domain: SENDER_DOMAIN,
-              subject: resolvedSubject,
+              subject: resolvedSubject || "Notificação",
               html,
               text: plainText,
               purpose: 'transactional',
@@ -210,7 +210,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
             return Response.json({ error: 'Failed to enqueue email' }, { status: 500 })
           }
 
-          console.log('Transactional email enqueued successfully');
+          console.log('Transactional email enqueued successfully', { messageId });
           return Response.json({ success: true, queued: true })
         } catch (error: any) {
           console.error('Unhandled server error in transactional/send:', error);
