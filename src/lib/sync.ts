@@ -5,6 +5,44 @@ export async function syncFromCloud() {
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return;
 
+  // Get current user profile to check if consultant
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("perfil")
+    .eq("id", session.user.id)
+    .single();
+
+  const isConsultant = profile?.perfil === "consultor";
+
+  // If consultant, push any local data that might not be in cloud
+  if (isConsultant) {
+    const localList = loadHistorico();
+    for (const insp of localList) {
+      try {
+        const cnpj = insp.dados?.estabelecimento?.cnpj || null;
+        const cleanCnpj = cnpj ? cnpj.replace(/\D/g, "") : null;
+        
+        await supabase.from("inspecoes").upsert({
+          id: insp.id,
+          consultor_id: session.user.id,
+          numero: insp.numero,
+          status: insp.status,
+          estabelecimento_nome: insp.estabelecimento,
+          cnpj: cleanCnpj,
+          data_inicio: insp.dataInicio,
+          data_conclusao: insp.dataConclusao,
+          progresso: insp.progresso,
+          conformidade: insp.conformidade,
+          dados: insp.dados as any,
+          respostas: insp.respostas as any,
+        });
+      } catch (err) {
+        console.error("Failed to push local inspection to cloud:", err);
+      }
+    }
+  }
+
+  // Fetch all inspections available to this user (Admins see everything, Consultants see theirs)
   const { data, error } = await supabase
     .from("inspecoes")
     .select("*")
@@ -32,7 +70,9 @@ export async function syncFromCloud() {
 
     const mergedMap = new Map<string, Inspecao>();
     
+    // Add local items first
     localList.forEach(item => mergedMap.set(item.id, item));
+    // Overwrite with cloud items (they are more authoritative for shared data)
     cloudList.forEach(item => mergedMap.set(item.id, item));
 
     const newList = Array.from(mergedMap.values()).sort((a, b) => 
