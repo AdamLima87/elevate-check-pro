@@ -12,20 +12,16 @@ export async function gerarPDF(insp: Inspecao) {
 
   // Cores
   const colorElevare = [26, 77, 46]; // #1a4d2e
-  const colorGrey = [245, 245, 245]; // #f5f5f5
-  const colorRedBg = [252, 235, 235]; // #FCEBEB
-  const colorRedText = [163, 45, 45]; // #A32D2D
-  const colorGreenBg = [234, 243, 222]; // #EAF3DE aproximado
 
   // Função para adicionar rodapé e faixa de topo (presente em todas as páginas)
   const addLayoutElements = (pageDoc: jsPDF, pageIndex: number, totalPages: number) => {
     pageDoc.setPage(pageIndex);
     
-    // 1.1 Faixa colorida no topo (8px)
+    // 1.1 Faixa colorida no topo (8px) - #1a4d2e
     pageDoc.setFillColor(26, 77, 46);
     pageDoc.rect(0, 0, pageWidth, 8, "F");
 
-    // 7. Rodapé
+    // Rodapé
     pageDoc.setDrawColor(26, 77, 46);
     pageDoc.setLineWidth(0.5);
     pageDoc.line(20, pageHeight - 40, pageWidth - 20, pageHeight - 40);
@@ -37,8 +33,8 @@ export async function gerarPDF(insp: Inspecao) {
     pageDoc.text(`Página ${pageIndex} de ${totalPages}`, pageWidth - 20, pageHeight - 25, { align: "right" });
   };
 
-  // Carregar Logo (URL direta do projeto)
-  const logoUrl = "https://www.elevareconsultoria.com/assets/logo-BuPDZoNv.png";
+  // Carregar Logo (URL direta solicitada)
+  const logoUrl = "https://elevate-check-pro.lovable.app/__l5e/assets-v1/1f90790f-e01b-48e0-8e59-4578c2d4a2f1/elevare-logo.png";
   let logoData = "";
   try {
     const response = await fetch(logoUrl);
@@ -53,9 +49,10 @@ export async function gerarPDF(insp: Inspecao) {
   }
 
   // 1. Cabeçalho
-  let y = 50;
+  let y = 60;
   if (logoData) {
-    doc.addImage(logoData, "PNG", 20, 20, 100, 40, undefined, 'FAST');
+    // Logo com 50px de altura (approx 37.5pt)
+    doc.addImage(logoData, "PNG", 20, 20, 125, 37.5, undefined, 'FAST');
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
@@ -68,7 +65,7 @@ export async function gerarPDF(insp: Inspecao) {
   doc.setTextColor(50, 50, 50);
   doc.text("Relatório de Inspeção", pageWidth - 20, 45, { align: "right" });
   
-  y = 80;
+  y = 90;
 
   // 1.3 Dados do Estabelecimento em 2 colunas
   const e = insp.dados.estabelecimento;
@@ -117,7 +114,7 @@ export async function gerarPDF(insp: Inspecao) {
   doc.text("RESUMO DO DESEMPENHO", 20, y);
   y += 15;
 
-  // 2.3 Cards coloridos lado a lado
+  // Cards coloridos lado a lado
   const cardW = (pageWidth - 60) / 3;
   
   // Conformes
@@ -152,7 +149,7 @@ export async function gerarPDF(insp: Inspecao) {
 
   y += 60;
 
-  // 2.1 Percentual e Badge
+  // Percentual e Badge
   doc.setFontSize(32);
   doc.setTextColor(26, 77, 46);
   doc.text(`${score.percentual.toFixed(1)}%`, 20, y + 15);
@@ -164,7 +161,7 @@ export async function gerarPDF(insp: Inspecao) {
   doc.setTextColor(255, 255, 255);
   doc.text(cls.label, 165, y + 9, { align: "center" });
 
-  // 2.4 Barra de progresso horizontal
+  // Barra de progresso horizontal
   y += 35;
   const fullBarW = pageWidth - 40;
   doc.setFillColor(230, 230, 230);
@@ -182,10 +179,7 @@ export async function gerarPDF(insp: Inspecao) {
     const na = itens.filter((r) => r === "NA").length;
     const aplic = s + n;
     const val = aplic === 0 ? 0 : (s / aplic) * 100;
-    
-    // 3.5 Seções com todos itens zerados
     const pct = aplic === 0 ? "-" : `${val.toFixed(0)}%`;
-    
     return [sec.title, String(s), String(n), String(na), pct, ""];
   });
 
@@ -195,13 +189,12 @@ export async function gerarPDF(insp: Inspecao) {
     body: sectionRows,
     headStyles: { fillColor: [26, 77, 46], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [245, 245, 245] },
-    styles: { fontSize: 8, cellPadding: 6, valign: 'middle' },
+    styles: { fontSize: 8, cellPadding: 6, valign: 'middle', font: 'helvetica' },
     columnStyles: {
       4: { fontStyle: 'bold', halign: 'center' },
       5: { cellWidth: 80 }
     },
     didDrawCell: (data) => {
-      // 3.3 Colorir percentual
       if (data.section === 'body' && data.column.index === 4) {
         const valStr = data.cell.raw as string;
         if (valStr !== "-") {
@@ -213,7 +206,6 @@ export async function gerarPDF(insp: Inspecao) {
           doc.setTextColor(150, 150, 150);
         }
       }
-      // 3.4 Barra de progresso visual pequena
       if (data.section === 'body' && data.column.index === 5) {
         const valStr = data.row.cells[4].raw as string;
         if (valStr !== "-") {
@@ -221,14 +213,11 @@ export async function gerarPDF(insp: Inspecao) {
           const barX = data.cell.x + 5;
           const barY = data.cell.y + (data.cell.height / 2) - 2;
           const fullW = data.cell.width - 10;
-          
           doc.setFillColor(230, 230, 230);
           doc.rect(barX, barY, fullW, 4, "F");
-          
           let bColor = [185, 28, 28];
           if (val >= 76) bColor = [26, 77, 46];
           else if (val >= 51) bColor = [234, 179, 8];
-          
           doc.setFillColor(bColor[0], bColor[1], bColor[2]);
           doc.rect(barX, barY, (fullW * val) / 100, 4, "F");
         }
@@ -248,27 +237,22 @@ export async function gerarPDF(insp: Inspecao) {
   if (ncRows.length) {
     const lastY = (doc as any).lastAutoTable?.finalY ?? y;
     let tableY = lastY + 25;
-    
-    // Verificar se cabe na página
     if (tableY > pageHeight - 100) {
       doc.addPage();
       tableY = 40;
     }
-
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(26, 77, 46);
     doc.text("NÃO CONFORMIDADES IDENTIFICADAS", 20, tableY);
-
     autoTable(doc, {
       startY: tableY + 10,
       head: [["Item", "Seção", "Descrição da Não Conformidade"]],
       body: ncRows,
       headStyles: { fillColor: [26, 77, 46], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      styles: { fontSize: 8, cellPadding: 8, overflow: 'linebreak' },
+      styles: { fontSize: 8, cellPadding: 8, overflow: 'linebreak', font: 'helvetica' },
       columnStyles: { 
-        // 4.2 Coluna do número do item com fundo vermelho
         0: { fillColor: [252, 235, 235], textColor: [163, 45, 45], fontStyle: 'bold', cellWidth: 35, halign: 'center' }, 
         1: { cellWidth: 100 },
         2: { cellWidth: 'auto' }
@@ -283,14 +267,11 @@ export async function gerarPDF(insp: Inspecao) {
     doc.addPage();
     finalY = 40;
   }
-
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(26, 77, 46);
   doc.text("OBSERVAÇÕES DO CONSULTOR", 20, finalY);
   finalY += 10;
-  
-  // 5.1 Caixa com borda tracejada
   const obs = (insp as any).observacoes || "";
   doc.setFillColor(249, 249, 249);
   doc.rect(20, finalY, pageWidth - 40, 80, "F");
@@ -298,11 +279,9 @@ export async function gerarPDF(insp: Inspecao) {
   doc.setLineDashPattern([3, 3], 0);
   doc.rect(20, finalY, pageWidth - 40, 80, "D");
   doc.setLineDashPattern([], 0);
-
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(60, 60, 60);
-  
   if (obs) {
     const splitObs = doc.splitTextToSize(obs, pageWidth - 60);
     doc.text(splitObs, 30, finalY + 20);
@@ -314,24 +293,19 @@ export async function gerarPDF(insp: Inspecao) {
     doc.addPage();
     finalY = 80;
   }
-
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
-  doc.line(20, finalY + 40, 220, finalY + 40); // Linha assinatura
-  doc.line(260, finalY + 40, 400, finalY + 40); // Linha carimbo
-  
+  doc.line(20, finalY + 40, 220, finalY + 40);
+  doc.line(260, finalY + 40, 400, finalY + 40);
   doc.setFontSize(9);
   doc.setFont("helvetica", "bold");
   const techName = e.respTecNome || "Responsável Técnico";
   const techReg = e.respTecConselho && e.respTecRegistro ? `${e.respTecConselho} ${e.respTecRegistro}` : "CRN / Registro";
-  
   doc.text(techName, 20, finalY + 55);
   doc.setFont("helvetica", "normal");
   doc.text(techReg, 20, finalY + 67);
   doc.text("Assinatura", 20, finalY + 79);
-
   doc.text("Carimbo", 260, finalY + 55);
-
   const dateStr = e.dataHora ? new Date(e.dataHora).toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR");
   doc.text(`Data: ${dateStr}`, pageWidth - 20, finalY + 55, { align: "right" });
 
