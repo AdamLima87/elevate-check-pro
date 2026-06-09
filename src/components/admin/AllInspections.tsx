@@ -340,6 +340,3 @@ export function AllInspections() {
   );
 }
 
-function Label({ children, className }: { children: React.ReactNode, className?: string }) {
-  return <label className={cn("text-xs font-medium text-muted-foreground mb-1 block", className)}>{children}</label>;
-}
