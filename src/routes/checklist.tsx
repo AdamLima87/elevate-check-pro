@@ -48,6 +48,7 @@ function ChecklistContent() {
 
   const navigate = useNavigate();
   const [insp, setInsp] = useState<Inspecao | null>(null);
+  const [activeTab, setActiveTab] = useState("a");
 
   useEffect(() => {
     try {
@@ -129,14 +130,25 @@ function ChecklistContent() {
           </div>
         </div>
 
-        <Tabs defaultValue="a">
+        <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-2">
             <TabsTrigger value="a">Apêndice A — Verificação</TabsTrigger>
-            <TabsTrigger value="b">Apêndice B — Questionário</TabsTrigger>
+            <TabsTrigger 
+              value="b" 
+              disabled={respondidos < totalChecklistItems}
+              title={respondidos < totalChecklistItems ? "Complete todos os itens do Apêndice A primeiro" : ""}
+            >
+              Apêndice B — Questionário
+            </TabsTrigger>
           </TabsList>
 
           <TabsContent value="a" className="mt-4">
-            <ApendiceA insp={insp} persist={persist} totalItems={totalChecklistItems} />
+            <ApendiceA 
+              insp={insp} 
+              persist={persist} 
+              totalItems={totalChecklistItems} 
+              onComplete={() => setActiveTab("b")}
+            />
           </TabsContent>
 
           <TabsContent value="b" className="mt-4">
@@ -175,7 +187,9 @@ function Card({ children, className }: { children: React.ReactNode; className?: 
   return <div className={cn("rounded-lg border bg-card text-card-foreground shadow-sm", className)}>{children}</div>;
 }
 
-function ApendiceA({ insp, persist, totalItems }: { insp: Inspecao; persist: (u: (i: Inspecao) => Inspecao) => void, totalItems: number }) {
+function ApendiceA({ insp, persist, totalItems, onComplete }: { insp: Inspecao; persist: (u: (i: Inspecao) => Inspecao) => void, totalItems: number, onComplete: () => void }) {
+  const respondidosCount = Object.values(insp.respostas || {}).filter((r) => r !== null && r !== undefined).length;
+
   const setResposta = (id: string, r: Resposta) => {
     persist((i) => ({ ...i, respostas: { ...(i.respostas || {}), [id]: r } }));
   };
@@ -199,99 +213,116 @@ function ApendiceA({ insp, persist, totalItems }: { insp: Inspecao; persist: (u:
 
   try {
     return (
-      <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-3">
-        {checklistSections.map((sec) => {
-          const total = sec.items.length;
-          const done = sec.items.filter((it) => insp.respostas?.[it.id] != null).length;
-          return (
-            <AccordionItem key={sec.id} value={sec.id} className="overflow-hidden rounded-lg border bg-card">
-              <AccordionTrigger className="bg-primary px-4 py-3 text-left text-primary-foreground hover:no-underline">
-                <div className="flex w-full items-center justify-between gap-2 pr-2">
-                  <span className="text-sm font-bold uppercase tracking-wide">{sec.title}</span>
-                  <span className="rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[11px] font-medium">
-                    {done}/{total}
-                  </span>
-                </div>
-              </AccordionTrigger>
-              <AccordionContent className="p-0">
-                <ul className="divide-y">
-                  {sec.items.map((item) => (
-                    <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
-                      <div className="flex-1 text-sm">
-                        <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
-                        {item.text}
-                      </div>
-                      <div className="flex gap-1.5">
-                        {(["S", "N", "NA"] as const).map((opt) => {
-                          const active = (insp.respostas?.[item.id] || null) === opt;
-                          return (
-                            <button
-                              key={opt}
-                              type="button"
-                              onClick={() => setResposta(item.id, opt)}
-                              className={cn(
-                                "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
-                                active && opt === "S" && "border-success bg-success text-success-foreground",
-                                active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
-                                active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
-                                !active && "bg-background text-muted-foreground hover:bg-accent",
-                              )}
-                            >
-                              {opt}
-                            </button>
-                          );
-                        })}
-                      </div>
-                    </li>
-                  ))}
-                </ul>
-
-                <div className="border-t bg-muted/20 p-4">
-                  <Label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-                    Evidências Fotográficas do Tópico
-                  </Label>
-                  <div className="flex flex-wrap gap-3">
-                    {insp.dados?.fotos?.[sec.id]?.map((foto: string, idx: number) => (
-                      <div key={idx} className="group relative h-24 w-24 overflow-hidden rounded-lg border bg-background shadow-sm">
-                        <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
-                        <button
-                          onClick={() => removeFoto(sec.id, idx)}
-                          className="absolute right-0 top-0 rounded-bl-lg bg-destructive/90 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
-                          title="Remover foto"
-                        >
-                          <X className="h-3.5 w-3.5" />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
-                      <Camera className="h-7 w-7" />
-                      <span className="mt-1.5 text-[11px] font-medium">Anexar Foto</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        capture="environment"
-                        onChange={(e) => {
-                          const file = e.target.files?.[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = (ev) => {
-                              const base64 = ev.target?.result as string;
-                              addFoto(sec.id, base64);
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                    </label>
+      <>
+        <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-3">
+          {checklistSections.map((sec) => {
+            const total = sec.items.length;
+            const done = sec.items.filter((it) => insp.respostas?.[it.id] != null).length;
+            return (
+              <AccordionItem key={sec.id} value={sec.id} className="overflow-hidden rounded-lg border bg-card">
+                <AccordionTrigger className="bg-primary px-4 py-3 text-left text-primary-foreground hover:no-underline">
+                  <div className="flex w-full items-center justify-between gap-2 pr-2">
+                    <span className="text-sm font-bold uppercase tracking-wide">{sec.title}</span>
+                    <span className="rounded-full bg-primary-foreground/20 px-2 py-0.5 text-[11px] font-medium">
+                      {done}/{total}
+                    </span>
                   </div>
-                </div>
-              </AccordionContent>
-            </AccordionItem>
-          );
+                </AccordionTrigger>
+                <AccordionContent className="p-0">
+                  <ul className="divide-y">
+                    {sec.items.map((item) => (
+                      <li key={item.id} className="flex flex-col gap-2 p-3 sm:flex-row sm:items-center sm:justify-between">
+                        <div className="flex-1 text-sm">
+                          <span className="mr-2 font-mono text-xs font-semibold text-primary">{item.id}.</span>
+                          {item.text}
+                        </div>
+                        <div className="flex gap-1.5">
+                          {(["S", "N", "NA"] as const).map((opt) => {
+                            const active = (insp.respostas?.[item.id] || null) === opt;
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                onClick={() => setResposta(item.id, opt)}
+                                className={cn(
+                                  "h-9 min-w-[44px] rounded-md border px-3 text-xs font-semibold transition-colors",
+                                  active && opt === "S" && "border-success bg-success text-success-foreground",
+                                  active && opt === "N" && "border-destructive bg-destructive text-destructive-foreground",
+                                  active && opt === "NA" && "border-muted-foreground bg-muted-foreground text-background",
+                                  !active && "bg-background text-muted-foreground hover:bg-accent",
+                                )}
+                              >
+                                {opt}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+
+                  <div className="border-t bg-muted/20 p-4">
+                    <Label className="mb-3 block text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                      Evidências Fotográficas do Tópico
+                    </Label>
+                    <div className="flex flex-wrap gap-3">
+                      {insp.dados?.fotos?.[sec.id]?.map((foto: string, idx: number) => (
+                        <div key={idx} className="group relative h-24 w-24 overflow-hidden rounded-lg border bg-background shadow-sm">
+                          <img src={foto} className="h-full w-full object-cover" alt={`Foto ${idx + 1}`} />
+                          <button
+                            onClick={() => removeFoto(sec.id, idx)}
+                            className="absolute right-0 top-0 rounded-bl-lg bg-destructive/90 p-1.5 text-white opacity-0 transition-opacity group-hover:opacity-100"
+                            title="Remover foto"
+                          >
+                            <X className="h-3.5 w-3.5" />
+                          </button>
+                        </div>
+                      ))}
+                      <label className="flex h-24 w-24 cursor-pointer flex-col items-center justify-center rounded-lg border-2 border-dashed border-muted-foreground/30 text-muted-foreground transition-all hover:border-primary/50 hover:bg-primary/5 hover:text-primary">
+                        <Camera className="h-7 w-7" />
+                        <span className="mt-1.5 text-[11px] font-medium">Anexar Foto</span>
+                        <input
+                          type="file"
+                          accept="image/*"
+                          className="hidden"
+                          capture="environment"
+                          onChange={(e) => {
+                            const file = e.target.files?.[0];
+                            if (file) {
+                              const reader = new FileReader();
+                              reader.onload = (ev) => {
+                                const base64 = ev.target?.result as string;
+                                addFoto(sec.id, base64);
+                              };
+                              reader.readAsDataURL(file);
+                            }
+                          }}
+                        />
+                      </label>
+                    </div>
+                  </div>
+                </AccordionContent>
+              </AccordionItem>
+            );
         })}
       </Accordion>
-    );
+      <div className="mt-8 flex justify-end">
+        <Button 
+          onClick={() => {
+            if (respondidosCount < totalItems) {
+               toast.error(`Ainda faltam itens no Apêndice A (${respondidosCount}/${totalItems})`);
+               return;
+            }
+            onComplete();
+          }}
+          className="gap-2"
+          variant={respondidosCount < totalItems ? "outline" : "default"}
+        >
+          Próximo: Apêndice B <ArrowRight className="h-4 w-4" />
+        </Button>
+      </div>
+    </>
+  );
   } catch (err) {
     console.error("Erro na renderização do Apêndice A:", err);
     return <div className="p-4 border rounded bg-destructive/10 text-destructive text-sm font-medium">Erro ao carregar lista de verificação (Apêndice A).</div>;
@@ -406,10 +437,6 @@ function ApendiceB({ insp, persist }: { insp: Inspecao; persist: (u: (i: Inspeca
                         ]}
                       />
                       <SelectField label="Carteira assinada" value={f.carteiraAssinada} onChange={(v) => updateFunc(idx, { carteiraAssinada: v })} options={["Sim", "Não"]} />
-                      <TextField label="Renda" value={f.renda} onChange={(v) => updateFunc(idx, { renda: v })} />
-                      <TextField label="Banhos diários" value={f.banhosDiarios} onChange={(v) => updateFunc(idx, { banhosDiarios: v })} />
-                      <SelectField label="Casa própria" value={f.casaPropria} onChange={(v) => updateFunc(idx, { casaPropria: v })} options={["Sim", "Não"]} />
-                      <TextField label="Nº de cômodos" value={f.numComodos} onChange={(v) => updateFunc(idx, { numComodos: v })} />
                       <SelectField label="Curso de Boas Práticas (BMP)" value={f.cursoBMP} onChange={(v) => updateFunc(idx, { cursoBMP: v })} options={["Sim", "Não"]} />
                       <div className="space-y-3 border-t pt-3">
                         <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
