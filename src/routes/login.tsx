@@ -193,13 +193,27 @@ function LoginPage() {
     }
     setResetLoading(true);
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: window.location.origin + "/reset-password",
+      // Chamando a Edge Function para gerar senha temporária
+      const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+        body: {
+          action: "forgot_password",
+          userData: { email }
+        }
       });
+
       if (error) throw error;
-      toast.success("E-mail de recuperação enviado!");
+      if (data.error) throw new Error(data.error);
+
+      toast.success(data.message || "E-mail de recuperação enviado com sua senha temporária!");
+      
+      // Como ainda não temos o envio de e-mail real configurado (aguardando DNS), 
+      // vou mostrar um alerta informativo se estivermos em desenvolvimento/preview
+      if (window.location.hostname.includes('lovable') || window.location.hostname === 'localhost') {
+        console.log("DEBUG: Resposta da função:", data);
+      }
     } catch (error: any) {
-      toast.error(error.message || "Erro ao enviar e-mail");
+      console.error("Erro ao recuperar senha:", error);
+      toast.error(error.message || "Erro ao solicitar recuperação");
     } finally {
       setResetLoading(false);
     }

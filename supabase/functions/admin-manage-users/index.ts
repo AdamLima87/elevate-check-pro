@@ -197,6 +197,52 @@ serve(async (req) => {
       })
     }
 
+    if (action === 'forgot_password') {
+      const { email } = userData
+      if (!email) throw new Error('E-mail é obrigatório')
+
+      // 1. Find user by email
+      const { data: users, error: listError } = await supabaseAdmin.auth.admin.listUsers()
+      if (listError) throw listError
+      
+      const authUser = users.users.find(u => u.email === email)
+      if (!authUser) {
+        // Return 200 for security but don't do anything
+        return new Response(JSON.stringify({ message: 'Se o e-mail existir no sistema, uma nova senha foi enviada.' }), {
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 200,
+        })
+      }
+
+      // 2. Generate temp password
+      const tempPassword = Math.random().toString(36).slice(-8)
+      
+      // 3. Update Auth password
+      const { error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        authUser.id,
+        { password: tempPassword }
+      )
+      if (authError) throw authError
+
+      // 4. Update Profile
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          force_password_change: true,
+          senha_texto: tempPassword
+        })
+        .eq('id', authUser.id)
+      if (updateError) throw updateError
+
+      // 5. TODO: Send email (transactional)
+      console.log(`FORGOT PASSWORD: Temp password for ${email}: ${tempPassword}`)
+
+      return new Response(JSON.stringify({ message: 'E-mail enviado com a senha temporária.' }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
     throw new Error('Invalid action or unauthorized')
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
