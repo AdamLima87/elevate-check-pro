@@ -144,8 +144,13 @@ function ResultadoPage() {
   const finalInsp = insp;
 
   const salvar = () => {
-    saveToHistorico(finalInsp);
-    toast.success("Inspeção salva no histórico.");
+    const updatedInsp: Inspecao = {
+      ...finalInsp,
+      status: "concluida"
+    };
+    saveToHistorico(updatedInsp);
+    setInsp(updatedInsp);
+    toast.success("Inspeção concluída e salva no histórico.");
   };
 
   const novaInspecao = () => {
