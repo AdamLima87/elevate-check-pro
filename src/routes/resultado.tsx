@@ -142,15 +142,49 @@ function ResultadoPage() {
   const finalInsp = insp;
 
   const salvar = async () => {
-    const updatedInsp: Inspecao = {
-      ...finalInsp,
-      status: "concluida"
-    };
-    
-    // Explicitly update status in both historical record and current state
-    await saveToHistorico(updatedInsp);
-    setInsp(updatedInsp);
-    toast.success("Inspeção concluída e salva no histórico.");
+    setLoading(true);
+    try {
+      const updatedInsp: Inspecao = {
+        ...finalInsp,
+        status: "concluida"
+      };
+      
+      await saveToHistorico(updatedInsp);
+      setInsp(updatedInsp);
+      
+      // Enviar e-mail automático
+      const email = updatedInsp.dados?.estabelecimento?.respLegalEmail || updatedInsp.dados?.estabelecimento?.email;
+      const cnpj = updatedInsp.dados?.estabelecimento?.cnpj || "";
+      
+      if (email) {
+        try {
+          const { error: fnError } = await supabase.functions.invoke("enviar-email-inspecao", {
+            body: {
+              email_cliente: email,
+              nome_estabelecimento: updatedInsp.estabelecimento,
+              cnpj: cnpj,
+              data_inspecao: updatedInsp.dataInicio,
+              conformidade: updatedInsp.conformidade,
+              classificacao: cls,
+              link_resultado: `${window.location.origin}/meu-resultado`
+            }
+          });
+          
+          if (fnError) throw fnError;
+          toast.success(`Relatório enviado por e-mail para ${email}`);
+        } catch (emailErr) {
+          console.error("Erro ao enviar e-mail:", emailErr);
+          toast.error("Não foi possível enviar o e-mail. O relatório está disponível no app.");
+        }
+      }
+      
+      toast.success("Inspeção concluída e salva no histórico.");
+    } catch (err) {
+      console.error("Erro ao salvar:", err);
+      toast.error("Erro ao salvar inspeção.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   const novaInspecao = () => {
