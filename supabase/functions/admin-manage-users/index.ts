@@ -21,20 +21,15 @@ serve(async (req) => {
     let isAuthorized = false
 
     if (authHeader) {
-      const supabaseClient = createClient(
-        Deno.env.get('SUPABASE_URL') ?? '',
-        Deno.env.get('SUPABASE_ANON_KEY') ?? '',
-        { global: { headers: { Authorization: authHeader } } }
-      )
-
-      const { data: { user }, error: userError } = await supabaseClient.auth.getUser()
+      const token = authHeader.replace('Bearer ', '')
+      const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
       if (!userError && user) {
-        const { data: profile } = await supabaseClient
+        const { data: profile } = await supabaseAdmin
           .from('profiles')
           .select('perfil')
           .eq('id', user.id)
           .single()
-        
+
         if (profile?.perfil === 'admin' || profile?.perfil === 'consultor') {
           isAuthorized = true
         }
