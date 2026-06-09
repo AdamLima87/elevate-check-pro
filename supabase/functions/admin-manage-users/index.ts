@@ -17,26 +17,44 @@ serve(async (req) => {
       Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? ''
     )
 
+    console.log('Request received:', req.method)
     const authHeader = req.headers.get('Authorization')
     let isAuthorized = false
 
     if (authHeader) {
       const token = authHeader.replace('Bearer ', '')
       const { data: { user }, error: userError } = await supabaseAdmin.auth.getUser(token)
-      if (!userError && user) {
-        const { data: profile } = await supabaseAdmin
+      
+      if (userError) {
+        console.error('Auth error:', userError)
+      }
+
+      if (user) {
+        console.log('User identified:', user.id)
+        const { data: profile, error: profileError } = await supabaseAdmin
           .from('profiles')
           .select('perfil')
           .eq('id', user.id)
           .single()
 
+        if (profileError) {
+          console.error('Profile error:', profileError)
+        }
+
+        console.log('User profile:', profile)
         if (profile?.perfil === 'admin' || profile?.perfil === 'consultor') {
           isAuthorized = true
         }
+      } else {
+        console.warn('No user found for token')
       }
+    } else {
+      console.warn('No Authorization header')
     }
 
-    const { action, userData, queueId } = await req.json()
+    const body = await req.json()
+    console.log('Request body:', body)
+    const { action, userData, queueId } = body
 
     // Internal system actions or admin actions
     if (action === 'create_client' || action === 'create') {
@@ -124,17 +142,21 @@ serve(async (req) => {
 
     if (action === 'reset_password') {
       if (!isAuthorized) throw new Error('Unauthorized')
-      const { email, userId } = userData
+      const { userId } = userData
       
       // Generate a random temporary password (8 characters)
       const tempPassword = Math.random().toString(36).slice(-8)
       
+      console.log(`Resetting password for user ${userId}`)
       const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
         userId,
         { password: tempPassword }
       )
       
-      if (authError) throw authError
+      if (authError) {
+        console.error('Auth update error:', authError)
+        throw authError
+      }
       
       // Update profile to force password change and store temp password
       const { error: updateError } = await supabaseAdmin
@@ -145,7 +167,29 @@ serve(async (req) => {
         })
         .eq('id', userId)
         
-      if (updateError) throw updateError
+      if (updateError) {
+        console.error('Profile update error:', updateError)
+        throw updateError
+      }
+
+      // Try to send email with temporary password
+      try {
+        const { data: userProfile } = await supabaseAdmin
+          .from('profiles')
+          .select('email, nome')
+          .eq('id', userId)
+          .single()
+
+        if (userProfile?.email) {
+          // If you have a custom domain configured, you could use an edge function to send the email
+          // For now, we return it to the UI so the admin can see it, and we try to send via resetPasswordForEmail
+          // but that would invalidate the temp password if they use the link.
+          // Better approach is to use a transactional email if configured.
+          console.log(`Temporary password for ${userProfile.email}: ${tempPassword}`)
+        }
+      } catch (e) {
+        console.error('Error fetching profile for email log:', e)
+      }
       
       return new Response(JSON.stringify({ message: 'Senha redefinida com sucesso', tempPassword }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
