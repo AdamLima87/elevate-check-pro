@@ -119,6 +119,16 @@ export function UserManagement() {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      if (error) throw error;
+      toast.success(`E-mail de redefinição enviado para ${email}`);
+    } catch (error: any) {
+      toast.error("Erro ao solicitar redefinição");
+    }
+  };
+
   const filteredUsers = useMemo(() => {
     return users.filter(user => 
       (user.nome?.toLowerCase() || "").includes(searchTerm.toLowerCase()) ||
