@@ -28,10 +28,6 @@ export interface Funcionario {
   idade: string;
   escolaridade: string;
   carteiraAssinada: string;
-  renda: string;
-  banhosDiarios: string;
-  casaPropria: string;
-  numComodos: string;
   cursoBMP: string;
   respostas: Record<string, string>;
 }
@@ -117,10 +113,6 @@ export function emptyFuncionario(): Funcionario {
     idade: "",
     escolaridade: "",
     carteiraAssinada: "",
-    renda: "",
-    banhosDiarios: "",
-    casaPropria: "",
-    numComodos: "",
     cursoBMP: "",
     respostas: {},
   };
