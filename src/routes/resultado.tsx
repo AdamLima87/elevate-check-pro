@@ -158,7 +158,7 @@ function ResultadoPage() {
       
       if (email) {
         try {
-          const response = await fetch(`${window.location.origin}/lovable/email/transactional/send`, {
+          const response = await fetch('/lovable/email/transactional/send', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

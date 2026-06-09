@@ -138,7 +138,7 @@ export function AllInspections() {
         tone: conf >= 76 ? "success" : conf >= 51 ? "warning" : "destructive"
       };
 
-      const response = await fetch(`${window.location.origin}/lovable/email/transactional/send`, {
+      const response = await fetch('/lovable/email/transactional/send', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
