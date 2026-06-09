@@ -84,12 +84,12 @@ function ResultadoPage() {
         return;
       }
       
-      // Set status to in_progress when arriving at results if it's the first time
+      // Always preserve the current status when loading the results page
       // The "concluida" status will only be set when the user clicks "Salvar"
       const score = calcularPercentual(r.respostas);
       const finalInsp: Inspecao = { 
         ...r, 
-        status: r.status === "concluida" ? "concluida" : "em_andamento", 
+        status: r.status, 
         conformidade: score.percentual,
         dataConclusao: r.dataConclusao || new Date().toISOString()
       };
