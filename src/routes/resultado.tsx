@@ -158,15 +158,20 @@ function ResultadoPage() {
       
       if (email) {
         try {
-          const { error: fnError } = await supabase.functions.invoke("enviar-email-inspecao", {
+          const { error: fnError } = await supabase.functions.invoke("transactional-email", {
             body: {
-              email_cliente: email,
-              nome_estabelecimento: updatedInsp.estabelecimento,
-              cnpj: cnpj,
-              data_inspecao: updatedInsp.dataInicio,
-              conformidade: updatedInsp.conformidade,
-              classificacao: cls,
-              link_resultado: `${window.location.origin}/meu-resultado`
+              templateName: "inspection",
+              recipientEmail: email,
+              templateData: {
+                email_cliente: email,
+                nome_estabelecimento: updatedInsp.estabelecimento,
+                cnpj: cnpj,
+                data_inspecao: updatedInsp.dataInicio,
+                conformidade: updatedInsp.conformidade,
+                classificacaoLabel: cls.label,
+                classificacaoTone: cls.tone,
+                link_resultado: `${window.location.origin}/meu-resultado`
+              }
             }
           });
           

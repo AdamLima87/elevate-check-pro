@@ -138,15 +138,20 @@ export function AllInspections() {
         tone: conf >= 76 ? "success" : conf >= 51 ? "warning" : "destructive"
       };
 
-      const { error } = await supabase.functions.invoke("enviar-email-inspecao", {
+      const { error } = await supabase.functions.invoke("transactional-email", {
         body: {
-          email_cliente: email,
-          nome_estabelecimento: insp.estabelecimento_nome,
-          cnpj: cnpj,
-          data_inspecao: insp.data_inicio,
-          conformidade: insp.conformidade,
-          classificacao: cls,
-          link_resultado: `${window.location.origin}/meu-resultado`
+          templateName: "inspection",
+          recipientEmail: email,
+          templateData: {
+            email_cliente: email,
+            nome_estabelecimento: insp.estabelecimento_nome,
+            cnpj: cnpj,
+            data_inspecao: insp.data_inicio,
+            conformidade: insp.conformidade,
+            classificacaoLabel: cls.label,
+            classificacaoTone: cls.tone,
+            link_resultado: `${window.location.origin}/meu-resultado`
+          }
         }
       });
 
