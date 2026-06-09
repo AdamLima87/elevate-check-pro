@@ -15,28 +15,29 @@ export async function gerarPDF(insp: Inspecao) {
   const colorGrey = [245, 245, 245]; // #f5f5f5
   const colorRedBg = [252, 235, 235]; // #FCEBEB
   const colorRedText = [163, 45, 45]; // #A32D2D
+  const colorGreenBg = [234, 243, 222]; // #EAF3DE aproximado
 
-  // Adiciona rodapé e barra de topo em todas as páginas (será feito ao final com um loop)
+  // Função para adicionar rodapé e faixa de topo (presente em todas as páginas)
   const addLayoutElements = (pageDoc: jsPDF, pageIndex: number, totalPages: number) => {
     pageDoc.setPage(pageIndex);
     
-    // Faixa colorida no topo (8px)
+    // 1.1 Faixa colorida no topo (8px)
     pageDoc.setFillColor(26, 77, 46);
     pageDoc.rect(0, 0, pageWidth, 8, "F");
 
-    // Rodapé
+    // 7. Rodapé
     pageDoc.setDrawColor(26, 77, 46);
     pageDoc.setLineWidth(0.5);
-    pageDoc.line(40, pageHeight - 40, pageWidth - 40, pageHeight - 40);
+    pageDoc.line(20, pageHeight - 40, pageWidth - 20, pageHeight - 40);
 
     pageDoc.setFontSize(8);
     pageDoc.setTextColor(100, 100, 100);
     pageDoc.setFont("helvetica", "normal");
-    pageDoc.text("Elevare Consultoria · elevareconsultoria.com · (11) 99484-0948", 40, pageHeight - 25);
-    pageDoc.text(`Página ${pageIndex} de ${totalPages}`, pageWidth - 40, pageHeight - 25, { align: "right" });
+    pageDoc.text("Elevare Consultoria · elevareconsultoria.com · (11) 99484-0948", 20, pageHeight - 25);
+    pageDoc.text(`Página ${pageIndex} de ${totalPages}`, pageWidth - 20, pageHeight - 25, { align: "right" });
   };
 
-  // Carregar Logo
+  // Carregar Logo (URL direta do projeto)
   const logoUrl = "https://www.elevareconsultoria.com/assets/logo-BuPDZoNv.png";
   let logoData = "";
   try {
@@ -51,30 +52,33 @@ export async function gerarPDF(insp: Inspecao) {
     console.warn("Não foi possível carregar o logo para o PDF", error);
   }
 
-  // Header Content
-  let y = 45;
+  // 1. Cabeçalho
+  let y = 50;
   if (logoData) {
-    doc.addImage(logoData, "PNG", 40, 20, 100, 40, undefined, 'FAST');
+    doc.addImage(logoData, "PNG", 20, 20, 100, 40, undefined, 'FAST');
   } else {
     doc.setFont("helvetica", "bold");
     doc.setFontSize(18);
     doc.setTextColor(26, 77, 46);
-    doc.text("ELEVARE", 40, 45);
+    doc.text("ELEVARE", 20, 45);
   }
 
   doc.setFont("helvetica", "bold");
   doc.setFontSize(16);
   doc.setTextColor(50, 50, 50);
-  doc.text("Relatório de Inspeção", pageWidth - 40, 45, { align: "right" });
+  doc.text("Relatório de Inspeção", pageWidth - 20, 45, { align: "right" });
   
-  y = 85;
+  y = 80;
 
-  // Dados do Estabelecimento
+  // 1.3 Dados do Estabelecimento em 2 colunas
   const e = insp.dados.estabelecimento;
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(26, 77, 46);
-  doc.text("DADOS DO ESTABELECIMENTO", 40, y);
+  doc.text("DADOS DO ESTABELECIMENTO", 20, y);
+  y += 5;
+  doc.setDrawColor(200);
+  doc.line(20, y, pageWidth - 20, y);
   y += 15;
 
   doc.setFont("helvetica", "normal");
@@ -96,7 +100,7 @@ export async function gerarPDF(insp: Inspecao) {
 
   let tempY = y;
   leftCol.forEach(line => {
-    doc.text(line, 40, tempY);
+    doc.text(line, 20, tempY);
     tempY += 13;
   });
   tempY = y;
@@ -106,51 +110,71 @@ export async function gerarPDF(insp: Inspecao) {
   });
   y = Math.max(y + (leftCol.length * 13), tempY) + 20;
 
-  // Bloco de Resumo Visual
-  doc.setFillColor(248, 249, 250);
-  doc.roundedRect(40, y, pageWidth - 80, 85, 4, 4, "F");
-  
-  // Percentual Grande
+  // 2. Bloco de Resumo
   doc.setFont("helvetica", "bold");
+  doc.setFontSize(10);
+  doc.setTextColor(26, 77, 46);
+  doc.text("RESUMO DO DESEMPENHO", 20, y);
+  y += 15;
+
+  // 2.3 Cards coloridos lado a lado
+  const cardW = (pageWidth - 60) / 3;
+  
+  // Conformes
+  doc.setFillColor(234, 243, 222);
+  doc.roundedRect(20, y, cardW, 45, 3, 3, "F");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text("CONFORMES", 20 + cardW/2, y + 15, { align: "center" });
+  doc.setFontSize(16);
+  doc.setTextColor(26, 77, 46);
+  doc.text(String(score.sim), 20 + cardW/2, y + 35, { align: "center" });
+
+  // Não conformes
+  doc.setFillColor(252, 235, 235);
+  doc.roundedRect(20 + cardW + 10, y, cardW, 45, 3, 3, "F");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text("NÃO CONFORMES", 20 + cardW + 10 + cardW/2, y + 15, { align: "center" });
+  doc.setFontSize(16);
+  doc.setTextColor(185, 28, 28);
+  doc.text(String(score.nao), 20 + cardW + 10 + cardW/2, y + 35, { align: "center" });
+
+  // NA
+  doc.setFillColor(245, 245, 245);
+  doc.roundedRect(20 + (cardW + 10) * 2, y, cardW, 45, 3, 3, "F");
+  doc.setFontSize(8);
+  doc.setTextColor(80, 80, 80);
+  doc.text("N/A", 20 + (cardW + 10) * 2 + cardW/2, y + 15, { align: "center" });
+  doc.setFontSize(16);
+  doc.setTextColor(120, 120, 120);
+  doc.text(String(score.na), 20 + (cardW + 10) * 2 + cardW/2, y + 35, { align: "center" });
+
+  y += 60;
+
+  // 2.1 Percentual e Badge
   doc.setFontSize(32);
   doc.setTextColor(26, 77, 46);
-  doc.text(`${score.percentual.toFixed(1)}%`, 60, y + 45);
+  doc.text(`${score.percentual.toFixed(1)}%`, 20, y + 15);
   
-  // Badge de Classificação
-  const tone = cls.tone === "success" ? [26, 77, 46] : cls.tone === "warning" ? [234, 179, 8] : [185, 28, 28];
-  doc.setFillColor(tone[0], tone[1], tone[2]);
-  doc.roundedRect(60, y + 55, 80, 18, 2, 2, "F");
-  doc.setFontSize(9);
-  doc.setTextColor(255, 255, 255);
-  doc.text(cls.label, 100, y + 67, { align: "center" });
-
-  // Métricas Lado a Lado
+  const badgeColor = cls.tone === "success" ? [26, 77, 46] : cls.tone === "warning" ? [234, 179, 8] : [185, 28, 28];
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.roundedRect(125, y - 5, 80, 22, 3, 3, "F");
   doc.setFontSize(10);
-  doc.setTextColor(80, 80, 80);
-  doc.setFont("helvetica", "bold");
-  doc.text("Conformes", 200, y + 30);
-  doc.text("Não conformes", 300, y + 30);
-  doc.text("NA", 420, y + 30);
+  doc.setTextColor(255, 255, 255);
+  doc.text(cls.label, 165, y + 9, { align: "center" });
 
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(14);
-  doc.setTextColor(26, 77, 46);
-  doc.text(String(score.sim), 200, y + 50);
-  doc.setTextColor(185, 28, 28);
-  doc.text(String(score.nao), 300, y + 50);
-  doc.setTextColor(120, 120, 120);
-  doc.text(String(score.na), 420, y + 50);
+  // 2.4 Barra de progresso horizontal
+  y += 35;
+  const fullBarW = pageWidth - 40;
+  doc.setFillColor(230, 230, 230);
+  doc.rect(20, y, fullBarW, 6, "F");
+  doc.setFillColor(badgeColor[0], badgeColor[1], badgeColor[2]);
+  doc.rect(20, y, (fullBarW * score.percentual) / 100, 6, "F");
 
-  // Barra de Progresso
-  const barWidth = pageWidth - 120;
-  doc.setFillColor(220, 220, 220);
-  doc.roundedRect(60, y + 75, barWidth, 4, 2, 2, "F");
-  doc.setFillColor(tone[0], tone[1], tone[2]);
-  doc.roundedRect(60, y + 75, (barWidth * score.percentual) / 100, 4, 2, 2, "F");
+  y += 30;
 
-  y += 110;
-
-  // Tabela de Seções
+  // 3. Tabela de seções
   const sectionRows = checklistSections.map((sec) => {
     const itens = sec.items.map((i) => insp.respostas[i.id]);
     const s = itens.filter((r) => r === "S").length;
@@ -158,6 +182,8 @@ export async function gerarPDF(insp: Inspecao) {
     const na = itens.filter((r) => r === "NA").length;
     const aplic = s + n;
     const val = aplic === 0 ? 0 : (s / aplic) * 100;
+    
+    // 3.5 Seções com todos itens zerados
     const pct = aplic === 0 ? "-" : `${val.toFixed(0)}%`;
     
     return [sec.title, String(s), String(n), String(na), pct, ""];
@@ -169,12 +195,13 @@ export async function gerarPDF(insp: Inspecao) {
     body: sectionRows,
     headStyles: { fillColor: [26, 77, 46], textColor: 255, fontStyle: 'bold' },
     alternateRowStyles: { fillColor: [245, 245, 245] },
-    styles: { fontSize: 8, cellPadding: 5, valign: 'middle' },
+    styles: { fontSize: 8, cellPadding: 6, valign: 'middle' },
     columnStyles: {
       4: { fontStyle: 'bold', halign: 'center' },
       5: { cellWidth: 80 }
     },
     didDrawCell: (data) => {
+      // 3.3 Colorir percentual
       if (data.section === 'body' && data.column.index === 4) {
         const valStr = data.cell.raw as string;
         if (valStr !== "-") {
@@ -182,8 +209,11 @@ export async function gerarPDF(insp: Inspecao) {
           if (val >= 76) doc.setTextColor(26, 77, 46);
           else if (val >= 51) doc.setTextColor(180, 140, 0);
           else doc.setTextColor(185, 28, 28);
+        } else {
+          doc.setTextColor(150, 150, 150);
         }
       }
+      // 3.4 Barra de progresso visual pequena
       if (data.section === 'body' && data.column.index === 5) {
         const valStr = data.row.cells[4].raw as string;
         if (valStr !== "-") {
@@ -204,10 +234,10 @@ export async function gerarPDF(insp: Inspecao) {
         }
       }
     },
-    margin: { left: 40, right: 40 },
+    margin: { left: 20, right: 20 },
   });
 
-  // Não conformidades
+  // 4. Tabela de não conformidades
   const ncRows: string[][] = [];
   checklistSections.forEach((sec) => {
     sec.items.forEach((it) => {
@@ -217,89 +247,93 @@ export async function gerarPDF(insp: Inspecao) {
 
   if (ncRows.length) {
     const lastY = (doc as any).lastAutoTable?.finalY ?? y;
+    let tableY = lastY + 25;
+    
+    // Verificar se cabe na página
+    if (tableY > pageHeight - 100) {
+      doc.addPage();
+      tableY = 40;
+    }
+
     doc.setFont("helvetica", "bold");
     doc.setFontSize(10);
     doc.setTextColor(26, 77, 46);
-    doc.text("NÃO CONFORMIDADES IDENTIFICADAS", 40, lastY + 25);
+    doc.text("NÃO CONFORMIDADES IDENTIFICADAS", 20, tableY);
 
     autoTable(doc, {
-      startY: lastY + 35,
+      startY: tableY + 10,
       head: [["Item", "Seção", "Descrição da Não Conformidade"]],
       body: ncRows,
       headStyles: { fillColor: [26, 77, 46], textColor: 255 },
       alternateRowStyles: { fillColor: [245, 245, 245] },
-      styles: { fontSize: 8, cellPadding: 8, overflow: 'ellipsize', cellWidth: 'auto' },
+      styles: { fontSize: 8, cellPadding: 8, overflow: 'linebreak' },
       columnStyles: { 
+        // 4.2 Coluna do número do item com fundo vermelho
         0: { fillColor: [252, 235, 235], textColor: [163, 45, 45], fontStyle: 'bold', cellWidth: 35, halign: 'center' }, 
         1: { cellWidth: 100 },
         2: { cellWidth: 'auto' }
       },
-      margin: { left: 40, right: 40 },
-      didParseCell: (data) => {
-        if (data.column.index === 2 && data.section === 'body') {
-          // Garante que o texto quebra corretamente e não ultrapassa muito o espaço
-          // @ts-ignore - maxLines exist em run-time para overflow: ellipsize mas não no tipo Styles
-          data.cell.styles.maxLines = 2;
-        }
-      }
+      margin: { left: 20, right: 20 }
     });
   }
 
-  // Observações e Assinatura
-  let finalY = (doc as any).lastAutoTable?.finalY + 40;
-  if (finalY > pageHeight - 150) {
+  // 5. Bloco de observações
+  let finalY = (doc as any).lastAutoTable?.finalY + 30;
+  if (finalY > pageHeight - 200) {
     doc.addPage();
-    finalY = 50;
+    finalY = 40;
   }
 
-  // Observações
   doc.setFont("helvetica", "bold");
   doc.setFontSize(10);
   doc.setTextColor(26, 77, 46);
-  doc.text("OBSERVAÇÕES DO CONSULTOR", 40, finalY);
-  finalY += 15;
+  doc.text("OBSERVAÇÕES DO CONSULTOR", 20, finalY);
+  finalY += 10;
   
+  // 5.1 Caixa com borda tracejada
+  const obs = (insp as any).observacoes || "";
+  doc.setFillColor(249, 249, 249);
+  doc.rect(20, finalY, pageWidth - 40, 80, "F");
+  doc.setDrawColor(200);
+  doc.setLineDashPattern([3, 3], 0);
+  doc.rect(20, finalY, pageWidth - 40, 80, "D");
+  doc.setLineDashPattern([], 0);
+
   doc.setFont("helvetica", "normal");
   doc.setFontSize(9);
   doc.setTextColor(60, 60, 60);
   
-  // Como não temos um campo específico "observações" na interface Inspecao ainda, 
-  // simulamos a lógica pedida. Se existir no futuro, será puxado daqui.
-  const obs = (insp as any).observacoes || "";
   if (obs) {
-    const splitObs = doc.splitTextToSize(obs, pageWidth - 80);
-    doc.text(splitObs, 40, finalY);
-    finalY += (splitObs.length * 12) + 40;
-  } else {
-    doc.setDrawColor(200, 200, 200);
-    doc.setLineDashPattern([2, 2], 0);
-    doc.line(40, finalY + 10, pageWidth - 40, finalY + 10);
-    doc.setLineDashPattern([], 0);
-    finalY += 60;
+    const splitObs = doc.splitTextToSize(obs, pageWidth - 60);
+    doc.text(splitObs, 30, finalY + 20);
   }
+  finalY += 100;
 
+  // 6. Bloco de assinatura
   if (finalY > pageHeight - 120) {
     doc.addPage();
     finalY = 80;
   }
 
-  // Assinatura
   doc.setDrawColor(0);
   doc.setLineWidth(0.5);
-  doc.line(pageWidth / 2 - 100, finalY + 40, pageWidth / 2 + 100, finalY + 40);
+  doc.line(20, finalY + 40, 220, finalY + 40); // Linha assinatura
+  doc.line(260, finalY + 40, 400, finalY + 40); // Linha carimbo
   
   doc.setFontSize(9);
-  doc.text("Assinatura do Responsável Técnico", pageWidth / 2, finalY + 55, { align: "center" });
-  
   doc.setFont("helvetica", "bold");
-  const techName = e.respTecNome || "__________________________";
-  const techReg = e.respTecConselho && e.respTecRegistro ? `${e.respTecConselho} ${e.respTecRegistro}` : "Conselho/Registro";
-  doc.text(techName, pageWidth / 2, finalY + 70, { align: "center" });
+  const techName = e.respTecNome || "Responsável Técnico";
+  const techReg = e.respTecConselho && e.respTecRegistro ? `${e.respTecConselho} ${e.respTecRegistro}` : "CRN / Registro";
+  
+  doc.text(techName, 20, finalY + 55);
   doc.setFont("helvetica", "normal");
-  doc.text(techReg, pageWidth / 2, finalY + 82, { align: "center" });
+  doc.text(techReg, 20, finalY + 67);
+  doc.text("Assinatura", 20, finalY + 79);
+
+  doc.text("Carimbo", 260, finalY + 55);
 
   const dateStr = e.dataHora ? new Date(e.dataHora).toLocaleDateString("pt-BR") : new Date().toLocaleDateString("pt-BR");
-  doc.text(`Data: ${dateStr}`, pageWidth / 2, finalY + 98, { align: "center" });
+  doc.text(`Data: ${dateStr}`, pageWidth - 20, finalY + 55, { align: "right" });
 
   // Finalização: Adiciona layout em todas as páginas
   const totalPages = doc.getNumberOfPages();
@@ -310,4 +344,3 @@ export async function gerarPDF(insp: Inspecao) {
   const filename = `Relatorio_Elevare_${(insp.estabelecimento || "inspecao").replace(/\s+/g, "_")}.pdf`;
   doc.save(filename);
 }
-
