@@ -127,6 +127,37 @@ serve(async (req) => {
       })
     }
 
+    if (action === 'reset_password') {
+      if (!isAuthorized) throw new Error('Unauthorized')
+      const { email, userId } = userData
+      
+      // Generate a random temporary password (8 characters)
+      const tempPassword = Math.random().toString(36).slice(-8)
+      
+      const { data: authUser, error: authError } = await supabaseAdmin.auth.admin.updateUserById(
+        userId,
+        { password: tempPassword }
+      )
+      
+      if (authError) throw authError
+      
+      // Update profile to force password change and store temp password
+      const { error: updateError } = await supabaseAdmin
+        .from('profiles')
+        .update({ 
+          force_password_change: true,
+          senha_texto: tempPassword
+        })
+        .eq('id', userId)
+        
+      if (updateError) throw updateError
+      
+      return new Response(JSON.stringify({ message: 'Senha redefinida com sucesso', tempPassword }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+      })
+    }
+
     throw new Error('Invalid action or unauthorized')
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {

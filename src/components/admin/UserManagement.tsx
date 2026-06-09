@@ -119,13 +119,28 @@ export function UserManagement() {
     }
   };
 
-  const resetPassword = async (email: string) => {
+  const resetPassword = async (user: any) => {
     try {
-      const { error } = await supabase.auth.resetPasswordForEmail(email);
+      const { data, error } = await supabase.functions.invoke("admin-manage-users", {
+        body: {
+          action: "reset_password",
+          userData: {
+            userId: user.id,
+            email: user.email
+          }
+        }
+      });
+
       if (error) throw error;
-      toast.success(`E-mail de redefinição enviado para ${email}`);
+      if (data.error) throw new Error(data.error);
+
+      toast.success(`Senha redefinida para: ${data.tempPassword}`, {
+        duration: 10000,
+      });
+      fetchUsers();
     } catch (error: any) {
-      toast.error("Erro ao solicitar redefinição");
+      console.error("Error resetting password:", error);
+      toast.error(error.message || "Erro ao solicitar redefinção");
     }
   };
 
@@ -293,8 +308,8 @@ export function UserManagement() {
                               }}>
                                 <Eye className="mr-2 h-4 w-4" /> Visualizar Senha
                               </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => resetPassword(user.email || user.id)} className="text-primary">
-                                <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Senha
+                              <DropdownMenuItem onClick={() => resetPassword(user)} className="text-primary">
+                                <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Senha Temporária
                               </DropdownMenuItem>
                             </DropdownMenuContent>
                           </DropdownMenu>
