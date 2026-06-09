@@ -1,7 +1,18 @@
 import { supabase } from "@/integrations/supabase/client";
 import { Inspecao, loadHistorico, HISTORICO_KEY } from "./storage";
+import { useSyncStore } from "@/hooks/useSyncStore";
 
 export async function syncFromCloud(silent = false) {
+  const setStatus = useSyncStore.getState().setStatus;
+  const setLastSync = useSyncStore.getState().setLastSync;
+
+  if (!navigator.onLine) {
+    setStatus("offline");
+    return;
+  }
+
+  setStatus("syncing");
+
   const { data: { session } } = await supabase.auth.getSession();
   if (!session?.user) return;
 
@@ -80,5 +91,10 @@ export async function syncFromCloud(silent = false) {
     );
 
     localStorage.setItem(HISTORICO_KEY, JSON.stringify(newList));
+    setStatus("idle");
+    setLastSync(new Date());
   }
+} catch (error) {
+  console.error("Sync error:", error);
+  setStatus("error");
 }
