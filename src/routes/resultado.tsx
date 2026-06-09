@@ -108,9 +108,8 @@ function ResultadoPage() {
     return checklistSections.map((sec) => {
       const itens = sec.items.map((i) => insp.respostas[i.id]);
       const s = itens.filter((r) => r === "S").length;
-      const n = itens.filter((r) => r === "N").length;
-      const aplic = s + n;
-      const pct = aplic === 0 ? 0 : Math.round((s / aplic) * 100);
+      const totalDaSecao = sec.items.length;
+      const pct = totalDaSecao === 0 ? 0 : Math.round((s / totalDaSecao) * 100);
       return { secao: sec.title.split(",")[0].slice(0, 18), pct };
     });
   }, [insp]);

@@ -177,9 +177,9 @@ export async function gerarPDF(insp: Inspecao) {
     const s = itens.filter((r) => r === "S").length;
     const n = itens.filter((r) => r === "N").length;
     const na = itens.filter((r) => r === "NA").length;
-    const aplic = s + n;
-    const val = aplic === 0 ? 0 : (s / aplic) * 100;
-    const pct = aplic === 0 ? "-" : `${val.toFixed(0)}%`;
+    const totalDaSecao = sec.items.length;
+    const val = totalDaSecao === 0 ? 0 : (s / totalDaSecao) * 100;
+    const pct = `${val.toFixed(0)}%`;
     return [sec.title, String(s), String(n), String(na), pct, ""];
   });
 
