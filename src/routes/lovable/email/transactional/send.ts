@@ -5,9 +5,9 @@ import { createFileRoute } from '@tanstack/react-router'
 import { TEMPLATES } from '@/lib/email-templates/registry'
 
 // Configuration baked in at scaffold time
-const SITE_NAME = "elevate-check-pro"
+const SITE_NAME = "Elevare Consultoria"
 const SENDER_DOMAIN = "notify.elevareconsultoria.com"
-const FROM_DOMAIN = "notify.elevareconsultoria.com"
+const FROM_DOMAIN = "elevareconsultoria.com"
 
 function generateToken(): string {
   const bytes = new Uint8Array(32)
@@ -36,11 +36,8 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
           // Parse request body
           let body: any;
           try {
-            const rawBody = await request.text();
-            console.log('Transactional send received raw body:', rawBody);
-            body = JSON.parse(rawBody);
-          } catch (e: any) {
-            console.error('Failed to parse request body as JSON:', e);
+            body = await request.json()
+          } catch {
             return Response.json(
               { error: 'Invalid JSON in request body' },
               { status: 400 }
@@ -189,7 +186,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
               to: effectiveRecipient,
               from: `${SITE_NAME} <noreply@${FROM_DOMAIN}>`,
               sender_domain: SENDER_DOMAIN,
-              subject: resolvedSubject,
+              subject: resolvedSubject || "Notificação",
               html,
               text: plainText,
               purpose: 'transactional',
@@ -210,7 +207,7 @@ export const Route = createFileRoute("/lovable/email/transactional/send")({
             return Response.json({ error: 'Failed to enqueue email' }, { status: 500 })
           }
 
-          console.log('Transactional email enqueued successfully');
+          console.log('Transactional email enqueued successfully', { messageId });
           return Response.json({ success: true, queued: true })
         } catch (error: any) {
           console.error('Unhandled server error in transactional/send:', error);
