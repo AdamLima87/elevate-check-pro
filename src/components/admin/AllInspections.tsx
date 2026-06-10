@@ -211,12 +211,12 @@ export function AllInspections() {
 
       if (error) throw error;
       
-      if (data?.message?.includes("User already exists")) {
-        toast.info("Este e-mail já está em uso por um administrador ou consultor.");
+      if (data?.alreadyExists) {
+        toast.info("Acesso do cliente atualizado (o usuário já existia no sistema).");
       } else {
         toast.success("Acesso do cliente gerado com sucesso!");
-        fetchData();
       }
+      fetchData();
     } catch (error: any) {
       console.error("Error creating client access:", error);
       toast.error("Erro ao gerar acesso do cliente.");

@@ -159,20 +159,28 @@ serve(async (req) => {
       if (authError) {
         if (authError.message.includes('already been registered') || authError.message.includes('already registered')) {
           // If user exists, try to update profile if it's a client
-          const { data: existingUser } = await supabaseAdmin.auth.admin.listUsers()
-          const user = existingUser.users.find(u => u.email === email)
-          if (user && perfil === 'cliente') {
-             await supabaseAdmin.from('profiles').update({ cnpj }).eq('id', user.id)
-          }
+          const { data: { users: allUsers } } = await supabaseAdmin.auth.admin.listUsers()
+          const user = allUsers.find(u => u.email === email)
           
-          if (queueId) {
-            await supabaseAdmin.from('client_user_queue').update({ status: 'completed', processed_at: new Date().toISOString() }).eq('id', queueId)
-          }
+          if (user) {
+            // Se o perfil for cliente, atualiza o CNPJ
+            if (perfil === 'cliente') {
+              await supabaseAdmin.from('profiles').update({ cnpj, perfil: 'cliente' }).eq('id', user.id)
+            }
+            
+            if (queueId) {
+              await supabaseAdmin.from('client_user_queue').update({ status: 'completed', processed_at: new Date().toISOString() }).eq('id', queueId)
+            }
 
-          return new Response(JSON.stringify({ message: 'User already exists, updated profile if needed' }), {
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-            status: 200,
-          })
+            return new Response(JSON.stringify({ 
+              message: 'User already exists, updated profile', 
+              user: user,
+              alreadyExists: true 
+            }), {
+              headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+              status: 200,
+            })
+          }
         }
         throw authError
       }
