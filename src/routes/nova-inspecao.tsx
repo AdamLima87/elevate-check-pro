@@ -42,11 +42,20 @@ function IndexPage() {
   const [checkingAuth, setCheckingAuth] = useState(true);
 
   useEffect(() => {
-    const r = loadRascunho();
-    if (r) {
-      setRascunho(r);
-      if (r.dados?.estabelecimento) {
-        setEstab(r.dados.estabelecimento);
+    // Check search params or state to determine if we should clear
+    const isEditing = window.location.search.includes('edit=true');
+    
+    if (!isEditing) {
+      // If not editing, clear rascunho to start fresh
+      setEstab(emptyEstabelecimento());
+      setRascunho(null);
+    } else {
+      const r = loadRascunho();
+      if (r) {
+        setRascunho(r);
+        if (r.dados?.estabelecimento) {
+          setEstab(r.dados.estabelecimento);
+        }
       }
     }
 
