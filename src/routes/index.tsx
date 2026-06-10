@@ -217,12 +217,26 @@ function IndexPage() {
       toast.warning("Adicione o e-mail do responsável para criar o acesso do cliente.");
     }
     
-    const loadingToast = toast.loading("Iniciando checklist...");
+    const loadingToast = toast.loading(rascunho ? "Salvando alterações..." : "Iniciando checklist...");
     try {
-      const { createNewInspecao } = await import("@/lib/storage");
-      const insp = await createNewInspecao();
-      insp.dados.estabelecimento = estab;
-      insp.estabelecimento = estab.nomeFantasia || estab.razaoSocial;
+      // Se já temos um rascunho, usamos ele. Caso contrário, criamos uma nova inspeção.
+      let insp: Inspecao;
+      
+      if (rascunho) {
+        insp = {
+          ...rascunho,
+          dados: {
+            ...rascunho.dados,
+            estabelecimento: estab
+          },
+          estabelecimento: estab.nomeFantasia || estab.razaoSocial
+        };
+      } else {
+        const { createNewInspecao } = await import("@/lib/storage");
+        insp = await createNewInspecao();
+        insp.dados.estabelecimento = estab;
+        insp.estabelecimento = estab.nomeFantasia || estab.razaoSocial;
+      }
       
       await saveRascunho(insp);
       await saveToHistorico(insp);
@@ -243,7 +257,7 @@ function IndexPage() {
           }
         }).then(({ data }) => {
           if (data && !data.error) {
-            toast.info("Acesso do cliente criado automaticamente", { duration: 3000 });
+            toast.info("Acesso do cliente garantido", { duration: 3000 });
           }
         });
       }
@@ -254,8 +268,8 @@ function IndexPage() {
       toast.dismiss(loadingToast);
       navigate({ to: "/checklist" });
     } catch (error) {
-      console.error("Erro ao iniciar inspeção:", error);
-      toast.error("Erro ao iniciar inspeção. Verifique sua conexão.");
+      console.error("Erro ao processar inspeção:", error);
+      toast.error("Erro ao salvar dados. Verifique sua conexão.");
       toast.dismiss(loadingToast);
     }
   };
