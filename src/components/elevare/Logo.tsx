@@ -6,14 +6,14 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       <img
         src={logoAsset.url}
         alt="Elevare Consultoria"
-        className="h-10 w-10 object-contain invert grayscale"
+        className="h-9 w-9 object-contain brightness-0 invert"
       />
       {!compact && (
-        <div className="leading-tight">
-          <div className="text-sm font-bold text-white uppercase tracking-tight">Elevare</div>
-          <div className="text-[10px] uppercase tracking-widest text-white/70 font-medium">
-            Consultoria
-          </div>
+        <div className="flex flex-col -space-y-1">
+          <span className="text-[20px] font-bold text-white tracking-tight leading-none">elevare</span>
+          <span className="text-[8px] uppercase tracking-[0.2em] text-white/80 font-medium leading-none ml-[1px]">
+            consultoria
+          </span>
         </div>
       )}
     </div>
