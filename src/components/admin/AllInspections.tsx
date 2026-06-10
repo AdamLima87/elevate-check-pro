@@ -213,12 +213,13 @@ export function AllInspections() {
       dataInicio: insp.data_inicio,
       dataConclusao: insp.data_conclusao,
       progresso: insp.progresso,
-      conformidade: insp.conformidade ? Number(insp.conformidade) : null,
-      dados: insp.dados || {
-        estabelecimento: { razaoSocial: "", nomeFantasia: "", cnpj: "" },
-        questionario: {},
-        funcionarios: [],
-        fotos: {}
+      dados: {
+        ...insp.dados,
+        estabelecimento: insp.dados?.estabelecimento || { 
+          razaoSocial: insp.estabelecimento_nome || "", 
+          nomeFantasia: insp.estabelecimento_nome || "", 
+          cnpj: insp.cnpj || "" 
+        }
       },
       respostas: insp.respostas || {},
     };
