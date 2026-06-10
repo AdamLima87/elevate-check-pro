@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ResultadoRouteImport } from './routes/resultado'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as PerfilRouteImport } from './routes/perfil'
+import { Route as NovaInspecaoRouteImport } from './routes/nova-inspecao'
 import { Route as MeuResultadoRouteImport } from './routes/meu-resultado'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as HistoricoRouteImport } from './routes/historico'
@@ -40,6 +41,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
 const PerfilRoute = PerfilRouteImport.update({
   id: '/perfil',
   path: '/perfil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NovaInspecaoRoute = NovaInspecaoRouteImport.update({
+  id: '/nova-inspecao',
+  path: '/nova-inspecao',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MeuResultadoRoute = MeuResultadoRouteImport.update({
@@ -124,6 +130,7 @@ export interface FileRoutesByFullPath {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/meu-resultado': typeof MeuResultadoRoute
+  '/nova-inspecao': typeof NovaInspecaoRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultado': typeof ResultadoRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/meu-resultado': typeof MeuResultadoRoute
+  '/nova-inspecao': typeof NovaInspecaoRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultado': typeof ResultadoRoute
@@ -163,6 +171,7 @@ export interface FileRoutesById {
   '/historico': typeof HistoricoRoute
   '/login': typeof LoginRoute
   '/meu-resultado': typeof MeuResultadoRoute
+  '/nova-inspecao': typeof NovaInspecaoRoute
   '/perfil': typeof PerfilRoute
   '/reset-password': typeof ResetPasswordRoute
   '/resultado': typeof ResultadoRoute
@@ -184,6 +193,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/meu-resultado'
+    | '/nova-inspecao'
     | '/perfil'
     | '/reset-password'
     | '/resultado'
@@ -203,6 +213,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/meu-resultado'
+    | '/nova-inspecao'
     | '/perfil'
     | '/reset-password'
     | '/resultado'
@@ -222,6 +233,7 @@ export interface FileRouteTypes {
     | '/historico'
     | '/login'
     | '/meu-resultado'
+    | '/nova-inspecao'
     | '/perfil'
     | '/reset-password'
     | '/resultado'
@@ -242,6 +254,7 @@ export interface RootRouteChildren {
   HistoricoRoute: typeof HistoricoRoute
   LoginRoute: typeof LoginRoute
   MeuResultadoRoute: typeof MeuResultadoRoute
+  NovaInspecaoRoute: typeof NovaInspecaoRoute
   PerfilRoute: typeof PerfilRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
   ResultadoRoute: typeof ResultadoRoute
@@ -275,6 +288,13 @@ declare module '@tanstack/react-router' {
       path: '/perfil'
       fullPath: '/perfil'
       preLoaderRoute: typeof PerfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nova-inspecao': {
+      id: '/nova-inspecao'
+      path: '/nova-inspecao'
+      fullPath: '/nova-inspecao'
+      preLoaderRoute: typeof NovaInspecaoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/meu-resultado': {
@@ -386,6 +406,7 @@ const rootRouteChildren: RootRouteChildren = {
   HistoricoRoute: HistoricoRoute,
   LoginRoute: LoginRoute,
   MeuResultadoRoute: MeuResultadoRoute,
+  NovaInspecaoRoute: NovaInspecaoRoute,
   PerfilRoute: PerfilRoute,
   ResetPasswordRoute: ResetPasswordRoute,
   ResultadoRoute: ResultadoRoute,
