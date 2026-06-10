@@ -155,7 +155,7 @@ export function UserManagement() {
     return {
       admins: filteredUsers.filter(u => u.perfil === "admin"),
       consultants: filteredUsers.filter(u => u.perfil === "consultor"),
-      clients: filteredUsers.filter(u => u.perfil === "cliente")
+      clients: filteredUsers.filter(u => u.perfil === "cliente" || !["admin", "consultor"].includes(u.perfil))
     };
   }, [filteredUsers]);
 

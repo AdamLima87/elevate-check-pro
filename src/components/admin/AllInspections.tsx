@@ -189,8 +189,13 @@ export function AllInspections() {
       });
 
       if (error) throw error;
-      toast.success("Acesso do cliente gerado com sucesso!");
-      fetchData(); // Atualiza a lista (embora nesta tela mostre inspeções, pode ser útil se houvesse indicador)
+      
+      if (data?.message?.includes("User already exists")) {
+        toast.info("Este e-mail já está em uso por um administrador ou consultor.");
+      } else {
+        toast.success("Acesso do cliente gerado com sucesso!");
+        fetchData();
+      }
     } catch (error: any) {
       console.error("Error creating client access:", error);
       toast.error("Erro ao gerar acesso do cliente.");
