@@ -213,7 +213,6 @@ export type Database = {
           id: string
           nome: string
           perfil: string
-          senha_texto: string | null
           ultimo_acesso: string | null
           updated_at: string
         }
@@ -226,7 +225,6 @@ export type Database = {
           id: string
           nome: string
           perfil: string
-          senha_texto?: string | null
           ultimo_acesso?: string | null
           updated_at?: string
         }
@@ -239,7 +237,6 @@ export type Database = {
           id?: string
           nome?: string
           perfil?: string
-          senha_texto?: string | null
           ultimo_acesso?: string | null
           updated_at?: string
         }
