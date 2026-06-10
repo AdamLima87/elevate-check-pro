@@ -45,7 +45,11 @@ function IndexPage() {
     const r = loadRascunho();
     if (r) {
       setRascunho(r);
+      if (r.dados?.estabelecimento) {
+        setEstab(r.dados.estabelecimento);
+      }
     }
+
 
     async function checkAuth() {
       const { data: { session } } = await supabase.auth.getSession();
