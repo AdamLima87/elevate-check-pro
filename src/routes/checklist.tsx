@@ -243,7 +243,7 @@ function ApendiceA({ insp, persist, totalItems, onComplete }: { insp: Inspecao; 
   try {
     return (
       <>
-        <Accordion type="multiple" defaultValue={[checklistSections[0].id]} className="space-y-3">
+        <Accordion type="single" collapsible defaultValue={checklistSections[0].id} className="space-y-3">
           {checklistSections.map((sec) => {
             const total = sec.items.length;
             const done = sec.items.filter((it) => insp.respostas?.[it.id] != null).length;
