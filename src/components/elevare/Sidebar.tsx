@@ -116,13 +116,13 @@ export function Sidebar({ profile, onLogout, isExpanded, setIsExpanded }: Sideba
         {expanded && profile && (
           <div className="p-4 border-t border-white/10 mt-auto bg-[#1a4d2e]">
             <div className="flex items-center gap-3 overflow-hidden">
-              <Avatar className="h-8 w-8 bg-white/10 shrink-0 border border-white/20">
+              <Avatar className="h-8 w-8 bg-white/20 shrink-0 border border-white/30">
                 <AvatarFallback className="text-[10px] text-white bg-transparent">
                   {profile.nome?.substring(0, 2).toUpperCase() || profile.email?.substring(0, 2).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
               <div className="flex flex-col min-w-0">
-                <span className="text-sm font-semibold truncate leading-none">{profile.nome}</span>
+                <span className="text-sm font-semibold truncate leading-none text-white">{profile.nome}</span>
                 <span className="text-[10px] text-white/60 uppercase tracking-wider truncate mt-1">
                   {profile.perfil}
                 </span>
