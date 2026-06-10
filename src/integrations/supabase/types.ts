@@ -47,6 +47,42 @@ export type Database = {
         }
         Relationships: []
       }
+      configuracoes: {
+        Row: {
+          created_at: string | null
+          email_contato: string
+          enviar_email_cliente: boolean | null
+          id: string
+          nome_empresa: string
+          notificar_admin: boolean | null
+          site: string | null
+          telefone: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          email_contato?: string
+          enviar_email_cliente?: boolean | null
+          id?: string
+          nome_empresa?: string
+          notificar_admin?: boolean | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          email_contato?: string
+          enviar_email_cliente?: boolean | null
+          id?: string
+          nome_empresa?: string
+          notificar_admin?: boolean | null
+          site?: string | null
+          telefone?: string | null
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
       email_send_log: {
         Row: {
           created_at: string
