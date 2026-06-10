@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Loader2, TrendingDown, Users, Building2, ClipboardCheck, AlertTriangle } from "lucide-react";
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
-  PieChart, Pie, Cell, Legend, Cell as CellPie
+  PieChart, Pie, Cell, Legend
 } from "recharts";
 import { checklistSections } from "@/lib/checklist-data";
 import { cn } from "@/lib/utils";
@@ -41,13 +41,13 @@ function DashboardPage() {
         }, {});
 
         // Process metrics
-        const totalInspections = inspections.length;
-        const concluded = inspections.filter(i => i.status === "concluida");
+        const totalInspections = inspections?.length || 0;
+        const concluded = inspections?.filter(i => i.status === "concluida") || [];
         const avgCompliance = concluded.length > 0 
           ? concluded.reduce((acc, i) => acc + (Number(i.conformidade) || 0), 0) / concluded.length 
           : 0;
         
-        const activeEstabs = new Set(inspections.map(i => i.cnpj || i.estabelecimento_nome)).size;
+        const activeEstabs = new Set(inspections?.map(i => i.cnpj || i.estabelecimento_nome)).size;
         
         const classifications = concluded.reduce((acc, i) => {
           const conf = Number(i.conformidade) || 0;
@@ -61,7 +61,7 @@ function DashboardPage() {
 
         // Monthly data
         const monthlyDataMap: any = {};
-        inspections.forEach(i => {
+        inspections?.forEach(i => {
           const date = new Date(i.data_inicio);
           const key = `${date.getFullYear()}-${(date.getMonth() + 1).toString().padStart(2, '0')}`;
           if (!monthlyDataMap[key]) monthlyDataMap[key] = { name: key, concluida: 0, em_andamento: 0 };
@@ -81,7 +81,7 @@ function DashboardPage() {
         const sectionNonConf: any = {};
         checklistSections.forEach(s => sectionNonConf[s.id] = { id: s.id, title: s.title, count: 0 });
         
-        inspections.forEach(i => {
+        inspections?.forEach(i => {
           const respostas = i.respostas as any;
           if (respostas) {
             checklistSections.forEach(sec => {
@@ -104,13 +104,15 @@ function DashboardPage() {
 
         // Consultant performance
         const consultantPerfMap: any = {};
-        inspections.forEach(i => {
+        inspections?.forEach(i => {
           const cId = i.consultor_id;
-          if (!consultantPerfMap[cId]) consultantPerfMap[cId] = { nome: consultantMap[cId] || "Desconhecido", count: 0, sum: 0, concluded: 0 };
-          consultantPerfMap[cId].count++;
-          if (i.status === "concluida") {
-            consultantPerfMap[cId].concluded++;
-            consultantPerfMap[cId].sum += (Number(i.conformidade) || 0);
+          if (cId) {
+            if (!consultantPerfMap[cId]) consultantPerfMap[cId] = { nome: consultantMap[cId] || "Desconhecido", count: 0, sum: 0, concluded: 0 };
+            consultantPerfMap[cId].count++;
+            if (i.status === "concluida") {
+              consultantPerfMap[cId].concluded++;
+              consultantPerfMap[cId].sum += (Number(i.conformidade) || 0);
+            }
           }
         });
         const consultantPerf = Object.values(consultantPerfMap).map((c: any) => ({
@@ -120,7 +122,7 @@ function DashboardPage() {
 
         // Segment performance
         const segmentMap: any = {};
-        inspections.forEach(i => {
+        inspections?.forEach(i => {
           const segment = (i.dados as any)?.estabelecimento?.atividade || "Não informado";
           if (!segmentMap[segment]) segmentMap[segment] = { name: segment, count: 0, sum: 0, concluded: 0 };
           segmentMap[segment].count++;
@@ -165,6 +167,16 @@ function DashboardPage() {
     );
   }
 
+  if (!stats) {
+    return (
+      <AppShell>
+        <div className="p-8 text-center">
+          <p className="text-muted-foreground">Não foi possível carregar as estatísticas.</p>
+        </div>
+      </AppShell>
+    );
+  }
+
   return (
     <ProtectedRoute allowedProfiles={["admin"]}>
       <AppShell>
@@ -183,7 +195,7 @@ function DashboardPage() {
             />
             <StatCard 
               title="Média de Conformidade" 
-              value={`${stats.avgCompliance.toFixed(1)}%`} 
+              value={`${(stats.avgCompliance || 0).toFixed(1)}%`} 
               icon={TrendingDown} 
               color="bg-green-50 text-green-600"
               sub="Dos concluídos"
@@ -196,7 +208,7 @@ function DashboardPage() {
             />
             <StatCard 
               title="Classificação RUIM" 
-              value={`${stats.pctRuim.toFixed(1)}%`} 
+              value={`${(stats.pctRuim || 0).toFixed(1)}%`} 
               icon={AlertTriangle} 
               color="bg-red-50 text-red-600"
               sub="Abaixo de 50%"
@@ -266,7 +278,7 @@ function DashboardPage() {
                     <div className="h-2 w-full bg-slate-100 rounded-full overflow-hidden">
                       <div 
                         className="h-full bg-red-500" 
-                        style={{ width: `${(item.count / Math.max(...stats.rankingNonConf.map((r: any) => r.count))) * 100}%` }}
+                        style={{ width: `${(item.count / Math.max(...stats.rankingNonConf.map((r: any) => Math.max(r.count, 1)))) * 100}%` }}
                       />
                     </div>
                   </div>
@@ -286,7 +298,7 @@ function DashboardPage() {
                       <div className="text-[10px] text-muted-foreground uppercase">{new Date(item.data_inicio).toLocaleDateString()}</div>
                     </div>
                     <div className="text-sm font-bold text-red-600">
-                      {Number(item.conformidade).toFixed(1)}%
+                      {Number(item.conformidade || 0).toFixed(1)}%
                     </div>
                   </div>
                 ))}
@@ -313,7 +325,7 @@ function DashboardPage() {
                       <tr key={c.nome} className="border-b last:border-0">
                         <td className="py-3 font-medium">{c.nome}</td>
                         <td className="py-3 text-center">{c.count}</td>
-                        <td className="py-3 text-right font-bold text-primary">{c.avg.toFixed(1)}%</td>
+                        <td className="py-3 text-right font-bold text-primary">{Number(c.avg || 0).toFixed(1)}%</td>
                       </tr>
                     ))}
                   </tbody>
@@ -339,7 +351,7 @@ function DashboardPage() {
                       <tr key={s.name} className="border-b last:border-0">
                         <td className="py-3 font-medium truncate max-w-[200px]">{s.name}</td>
                         <td className="py-3 text-center">{s.count}</td>
-                        <td className="py-3 text-right font-bold text-primary">{s.avg.toFixed(1)}%</td>
+                        <td className="py-3 text-right font-bold text-primary">{Number(s.avg || 0).toFixed(1)}%</td>
                       </tr>
                     ))}
                   </tbody>
