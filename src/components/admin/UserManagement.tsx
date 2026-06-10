@@ -257,103 +257,187 @@ export function UserManagement() {
         </Dialog>
       </div>
 
-      <Card>
-        <CardContent className="p-0">
-          {loading ? (
-            <div className="flex justify-center py-12">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            </div>
-          ) : (
-            <div className="rounded-md">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-muted/50">
-                    <TableHead className="font-bold">Nome</TableHead>
-                    <TableHead className="font-bold">E-mail</TableHead>
-                    <TableHead className="font-bold">Perfil</TableHead>
-                    <TableHead className="font-bold text-center">Senha</TableHead>
-                    <TableHead className="font-bold">Criado em</TableHead>
-                    <TableHead className="font-bold">Status</TableHead>
-                    <TableHead className="text-right font-bold">Ações</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredUsers.length === 0 ? (
-                    <TableRow>
-                      <TableCell colSpan={7} className="h-24 text-center text-muted-foreground">
-                        Nenhum usuário encontrado.
-                      </TableCell>
-                    </TableRow>
-                  ) : (
-                    filteredUsers.map((user) => (
-                      <TableRow key={user.id} className={cn("transition-colors", !user.ativo && "opacity-60 bg-muted/20")}>
-                        <TableCell className="font-medium py-4">{user.nome}</TableCell>
-                        <TableCell className="text-sm">{user.email || user.id}</TableCell>
-                        <TableCell>
-                          <div className={cn(
-                            "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
-                            user.perfil === "admin" && "bg-blue-100 text-blue-700",
-                            user.perfil === "consultor" && "bg-green-100 text-green-700",
-                            user.perfil === "cliente" && "bg-orange-100 text-orange-700"
-                          )}>
-                            {user.perfil === "admin" && <Shield className="h-3 w-3" />}
-                            {user.perfil === "consultor" && <User className="h-3 w-3" />}
-                            {user.perfil === "cliente" && <Store className="h-3 w-3" />}
-                            {user.perfil}
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-center">
-                          <DropdownMenu>
-                            <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 gap-2">
-                                <Eye className="h-4 w-4" /> Opções
-                              </Button>
-                            </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end">
-                              <DropdownMenuItem onClick={() => {
-                                const pass = user.senha_texto || "Não disponível (Senha já alterada ou não registrada)";
-                                toast.info(`Senha atual: ${pass}`, { duration: 5000 });
-                              }}>
-                                <Eye className="mr-2 h-4 w-4" /> Visualizar Senha
-                              </DropdownMenuItem>
-                              <DropdownMenuItem onClick={() => resetPassword(user)} className="text-primary">
-                                <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Senha Temporária
-                              </DropdownMenuItem>
-                            </DropdownMenuContent>
-                          </DropdownMenu>
-                        </TableCell>
-                        <TableCell className="text-xs text-muted-foreground">
-                          {user.created_at ? new Date(user.created_at).toLocaleDateString("pt-BR") : "---"}
-                        </TableCell>
-                        <TableCell>
-                          <div className="flex items-center gap-2">
-                            <span className={cn(
-                              "h-2 w-2 rounded-full",
-                              user.ativo ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-red-500"
-                            )} />
-                            <span className="text-xs font-medium">{user.ativo ? "Ativo" : "Inativo"}</span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="text-right">
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => toggleStatus(user)}
-                            className={cn("h-8 w-8", user.ativo ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-50")}
-                            title={user.ativo ? "Desativar" : "Reativar"}
-                          >
-                            <Power className="h-4 w-4" />
-                          </Button>
-                        </TableCell>
+      <div className="space-y-6">
+        {/* Equipe Interna */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 px-1">
+            <Shield className="h-4 w-4" /> Equipe Interna (Admins e Consultores)
+          </h3>
+          <Card>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-bold">Nome</TableHead>
+                        <TableHead className="font-bold">E-mail</TableHead>
+                        <TableHead className="font-bold">Perfil</TableHead>
+                        <TableHead className="font-bold text-center">Senha</TableHead>
+                        <TableHead className="font-bold">Status</TableHead>
+                        <TableHead className="text-right font-bold">Ações</TableHead>
                       </TableRow>
-                    ))
-                  )}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                    </TableHeader>
+                    <TableBody>
+                      {[...admins, ...consultants].length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={6} className="h-24 text-center text-muted-foreground">
+                            Nenhum membro da equipe encontrado.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        [...admins, ...consultants].map((user) => (
+                          <TableRow key={user.id} className={cn("transition-colors", !user.ativo && "opacity-60 bg-muted/20")}>
+                            <TableCell className="font-medium py-4">{user.nome}</TableCell>
+                            <TableCell className="text-sm">{user.email || user.id}</TableCell>
+                            <TableCell>
+                              <div className={cn(
+                                "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider",
+                                user.perfil === "admin" && "bg-blue-100 text-blue-700",
+                                user.perfil === "consultor" && "bg-green-100 text-green-700"
+                              )}>
+                                {user.perfil === "admin" && <Shield className="h-3 w-3" />}
+                                {user.perfil === "consultor" && <User className="h-3 w-3" />}
+                                {user.perfil}
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-center">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="sm" className="h-8 gap-2">
+                                    <Eye className="h-4 w-4" /> Opções
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem onClick={() => {
+                                    const pass = user.senha_texto || "Não disponível (Senha já alterada ou não registrada)";
+                                    toast.info(`Senha atual: ${pass}`, { duration: 5000 });
+                                  }}>
+                                    <Eye className="mr-2 h-4 w-4" /> Visualizar Senha
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem onClick={() => resetPassword(user)} className="text-primary">
+                                    <RotateCcw className="mr-2 h-4 w-4" /> Redefinir Senha Temporária
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex items-center gap-2">
+                                <span className={cn(
+                                  "h-2 w-2 rounded-full",
+                                  user.ativo ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-red-500"
+                                )} />
+                                <span className="text-xs font-medium">{user.ativo ? "Ativo" : "Inativo"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => toggleStatus(user)}
+                                className={cn("h-8 w-8", user.ativo ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-50")}
+                                title={user.ativo ? "Desativar" : "Reativar"}
+                              >
+                                <Power className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Clientes */}
+        <div className="space-y-3">
+          <h3 className="text-sm font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2 px-1">
+            <Store className="h-4 w-4" /> Clientes (Acessos Gerados via Inspeção)
+          </h3>
+          <Card>
+            <CardContent className="p-0">
+              {loading ? (
+                <div className="flex justify-center py-12">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                </div>
+              ) : (
+                <div className="rounded-md">
+                  <Table>
+                    <TableHeader>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-bold">Razão Social / Nome</TableHead>
+                        <TableHead className="font-bold">E-mail (Login)</TableHead>
+                        <TableHead className="font-bold">CNPJ (Senha Inicial)</TableHead>
+                        <TableHead className="font-bold text-center">Status</TableHead>
+                        <TableHead className="text-right font-bold">Ações</TableHead>
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {clients.length === 0 ? (
+                        <TableRow>
+                          <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
+                            Nenhum cliente cadastrado ainda.
+                          </TableCell>
+                        </TableRow>
+                      ) : (
+                        clients.map((user) => (
+                          <TableRow key={user.id} className={cn("transition-colors", !user.ativo && "opacity-60 bg-muted/20")}>
+                            <TableCell className="font-medium py-4">{user.nome}</TableCell>
+                            <TableCell className="text-sm">{user.email}</TableCell>
+                            <TableCell className="text-sm font-mono">
+                              <div className="flex items-center gap-2">
+                                <span>{user.cnpj || "---"}</span>
+                                <Button 
+                                  variant="ghost" 
+                                  size="icon" 
+                                  className="h-6 w-6" 
+                                  onClick={() => {
+                                    const pass = user.senha_texto || user.cnpj || "Não disponível";
+                                    toast.info(`Senha registrada: ${pass}`);
+                                  }}
+                                >
+                                  <Eye className="h-3.5 w-3.5" />
+                                </Button>
+                              </div>
+                            </TableCell>
+                            <TableCell>
+                              <div className="flex justify-center items-center gap-2">
+                                <span className={cn(
+                                  "h-2 w-2 rounded-full",
+                                  user.ativo ? "bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]" : "bg-red-500"
+                                )} />
+                                <span className="text-xs font-medium">{user.ativo ? "Ativo" : "Inativo"}</span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="text-right">
+                              <Button 
+                                variant="ghost" 
+                                size="icon" 
+                                onClick={() => toggleStatus(user)}
+                                className={cn("h-8 w-8", user.ativo ? "text-destructive hover:bg-destructive/10" : "text-green-600 hover:bg-green-50")}
+                                title={user.ativo ? "Desativar" : "Reativar"}
+                              >
+                                <Power className="h-4 w-4" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
+                    </TableBody>
+                  </Table>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
