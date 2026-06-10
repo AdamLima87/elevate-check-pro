@@ -278,24 +278,7 @@ function IndexPage() {
         </div>
 
         <div className="flex flex-wrap gap-2">
-          {user ? (
-            <div className="flex items-center gap-2">
-              <SyncStatus />
-              <Button variant="outline" size="sm" onClick={() => handleSync(false)} disabled={syncing} className="gap-2">
-                {syncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
-                Sincronizar
-              </Button>
-              <Button variant="ghost" size="sm" onClick={handleLogout} className="gap-2 text-destructive hover:bg-destructive/10">
-                <LogOut className="h-4 w-4" />
-                Sair
-              </Button>
-            </div>
-          ) : (
-            <Button variant="outline" size="sm" onClick={handleLogin} className="gap-2">
-              <LogIn className="h-4 w-4" />
-              Entrar / Sincronizar
-            </Button>
-          )}
+          <SyncStatus />
         </div>
       </div>
 
