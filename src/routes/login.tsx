@@ -176,9 +176,11 @@ function LoginPage() {
         .eq("id", profile.id);
 
       if (profile?.perfil === "admin") {
-        navigate({ to: "/admin" });
-      } else if (profile?.perfil === "cliente" || profile?.perfil === "consultor") {
-        navigate({ to: profile?.perfil === "cliente" ? "/meu-resultado" : "/" });
+        navigate({ to: "/dashboard" });
+      } else if (profile?.perfil === "consultor") {
+        navigate({ to: "/historico" });
+      } else if (profile?.perfil === "cliente") {
+        navigate({ to: "/meu-resultado" });
       } else {
         navigate({ to: "/login", search: { error: "insufficient_permissions" } });
       }
