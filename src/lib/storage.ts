@@ -49,7 +49,7 @@ export interface QuestionarioEstab {
 
 export interface Inspecao {
   id: string; 
-  numero: number; 
+  numero_sequencial: number; 
   status: "em_andamento" | "concluida";
   estabelecimento: string; 
   dataInicio: string;
