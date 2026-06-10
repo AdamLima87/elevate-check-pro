@@ -46,12 +46,10 @@ function IndexPage() {
   const [syncing, setSyncing] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
 
+  const { edit } = Route.useSearch();
+
   useEffect(() => {
-    // Check search params or state to determine if we should clear
-    const isEditing = window.location.search.includes('edit=true');
-    
-    if (!isEditing) {
-      // If not editing, clear rascunho to start fresh
+    if (!edit) {
       setEstab(emptyEstabelecimento());
       setRascunho(null);
     } else {
