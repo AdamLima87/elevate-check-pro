@@ -6,7 +6,7 @@ export function Logo({ compact = false }: { compact?: boolean }) {
       <img
         src={logoAsset.url}
         alt="Elevare Consultoria"
-        className="h-10 w-10 object-contain brightness-0 invert"
+        className="h-10 w-10 object-contain invert grayscale"
       />
       {!compact && (
         <div className="leading-tight">
